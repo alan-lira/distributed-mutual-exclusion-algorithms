@@ -22,7 +22,7 @@ TRY IT OUT:
 
       2) Unzip it;
 
-      3) Open this directory ('Naimi-Trehel-v1(No-Fault-Tolerance') into Terminal;
+      3) Open this directory 'Naimi-Trehel-v1(No-Fault-Tolerance)' into Terminal;
 
       4) Run the following instructions to COMPILE:
          4.1) cp makefile.txt Makefile
