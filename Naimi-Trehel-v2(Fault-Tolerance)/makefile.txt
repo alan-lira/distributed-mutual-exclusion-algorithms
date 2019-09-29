@@ -1,0 +1,33 @@
+##############################################################################
+# FILE: makefile.txt
+# DESCRIPTION:
+#   Makefile for all MPI C Language codes
+# AUTHOR: Alan Lira Nunes
+# LAST REVISED:  09/29/2019 A.D.
+###############################################################################
+
+#Compiler
+CC    =   mpicc
+#CC    =   mpiicc
+#CC    =   mpigcc
+#CC    =   mpipgcc
+
+#Flags
+FLAGS   =   -O2 -w -pthread
+# -02:  Optimization Level 2 -> Enables (-O1); inline small functions;
+# -w:   Enables extra flags not enabled by -Wall, such as -Wsign-compare (C only), -Wtype-limits, -Wuninitialized...
+# -pthread: Adds support for multithreading with the pthreads library. This option sets flags for both the preprocessor and linker.
+
+all: naimi-trehel
+
+naimi-trehel:  naimi-trehel.c node.c thread-mpi-message-processing-parameters.c
+	$(CC) $(FLAGS) naimi-trehel.c -o naimi-trehel node.c thread-mpi-message-processing-parameters.c
+
+clean:  
+	/bin/rm -rf     \
+	naimi-trehel    \
+        *.o
+
+
+
+
