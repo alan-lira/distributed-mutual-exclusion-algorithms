@@ -159,6 +159,8 @@ void receive_token(s_N *node) {
 
    // { Receive the token from node Sj }
 
+   node->myState = active;
+
    node->tokenPresent = true;
 
    printf("(Node %d): Recebi o TOKEN!\n\n", node->self);
