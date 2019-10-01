@@ -17,17 +17,17 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    int nodeCount = threadParameters->nodeCount;
 
-   int valorMensagem = 0;
+   int messageContent = 0;
 
-   int somadorMensagensFim = 0;
+   int idleNodeCount = 0;
 
-   int idNodeSolicitante = 0;
+   int requestingNode = 0;
 
-   while(somadorMensagensFim != nodeCount) {
+   while(idleNodeCount != nodeCount) {
 
       MPI_Status status;
 
-      MPI_Recv(&valorMensagem, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+      MPI_Recv(&messageContent, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
       int mpiTag = status.MPI_TAG;
 
@@ -35,21 +35,21 @@ void jobMPIMessageProcessing(const void *parameters) {
 
       switch(mpiTag) {
 
-         case 1: // Mensagem da Main sinalizando que não vai mais acessar a CRITICAL SECTION.
+         case TAG_IDLE: // Este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.
 
-            somadorMensagensFim += 1;
-
-            break;
-
-         case 500: // Existe um node Sj (valorMensagem) solicitando para mim (node) o TOKEN para acessar a CRITICAL SECTION.
-
-	    idNodeSolicitante = valorMensagem;
-
-            receive_request_cs(node, idNodeSolicitante);
+            idleNodeCount += 1;
 
             break;
 
-         case 1000: // Eu (node) estou recebendo o TOKEN para acessar a CRITICAL SECTION.
+         case TAG_REQUEST: // Existe um node Sj (messageContent) solicitando para mim (node) o TOKEN para acessar a CRITICAL SECTION.
+
+	    requestingNode = messageContent;
+
+            receive_request_cs(node, requestingNode);
+
+            break;
+
+         case TAG_TOKEN: // Eu (node) estou recebendo o TOKEN para acessar a CRITICAL SECTION.
 
             receive_token(node);
 
@@ -61,37 +61,38 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    }
 
-   printf("Nó %d: Encerrei o jobMPIMessageProcessing!\n\n", node->self);
+   printf("----- (Node %d): Encerrei o meu jobMPIMessageProcessing! -----\n\n", node->self);
 
 }
 
 int main(int argc, char *argv[]) {
 
-   int rank, nodeCount;
+   int nodeRank, nodeCount;
 
    // Inicializando o ambiente MPI.
    MPI_Init(&argc, &argv);
 
-   // Atribuindo à variável 'rank' o id deste processo MPI.
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   // Atribuindo à variável 'nodeRank' o id deste processo MPI.
+   MPI_Comm_rank(MPI_COMM_WORLD, &nodeRank);
 
    // Atribuindo à variável 'nodeCount' o número de processos MPI.
    MPI_Comm_size(MPI_COMM_WORLD, &nodeCount);
 
    // Criando o node para este processo MPI.
    s_N *node = initialize_node();
-   node = create_node(rank);
+
+   node = create_node(nodeRank);
 
    if (node->self == ELECTED_NODE) { // O node 0 foi eleito, inicialmente, como o TOKEN OWNER...
 
-      node->token = true;
+      receive_token(node);
 
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 1 (TOKEN OWNER = true).
       sem_init(&g_TokenSemaphore, 0, 1);
 
    } else { // Atribuindo o node 0 como TOKEN OWNER dos demais nodes...
 
-      node->owner = ELECTED_NODE;
+      node->last = ELECTED_NODE;
 
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 0 (TOKEN OWNER = false).
       sem_init(&g_TokenSemaphore, 0, 0);
@@ -103,6 +104,7 @@ int main(int argc, char *argv[]) {
 
    // Criando os parâmetros para a thread 'threadMPIMessageProcessing'.
    s_TMPIMPP *threadParameters = initialize_thread_parameters();
+
    threadParameters = create_thread_parameters(node, nodeCount);
 
    // Criando a thread 'threadMPIMessageProcessing', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'threadParameters'.
@@ -111,22 +113,13 @@ int main(int argc, char *argv[]) {
    // Este node está requisitando o acesso à CRITICAL SECTION.
    request_cs(node, nodeCount);
 
-   // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedZero == 0 significa sucesso na operação de bloqueio).
-   int semaphoreLockedZero = sem_wait(&g_TokenSemaphore);
+   // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
+   int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);
 
-   if (semaphoreLockedZero == 0) {
+   if (semaphoreLockedConfirmed == 0) {
 
       // Este node está simulando o acesso à CRITICAL SECTION.
-      srand(time(NULL));
-
-      int duracao_acesso = rand() % 15;
-
-      if (duracao_acesso == 0) {
-         duracao_acesso = 1;
-      }
-
-      printf("(Nó %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, duracao_acesso);
-      sleep(duracao_acesso);
+      perform_cs(node);
 
       // Este node está liberando o acesso à CRITICAL SECTION.
       release_cs(node);
