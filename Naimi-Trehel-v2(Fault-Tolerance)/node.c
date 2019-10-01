@@ -12,6 +12,8 @@ s_N *create_node(int nodeRank) {
    newNode->self = nodeRank;
    newNode->last = newNode->next = -1;
    newNode->tokenPresent = newNode->requestingCS = false;
+   newNode->x = newNode->xc = NULL;
+   newNode->myState = rest;
    return newNode;
 }
 

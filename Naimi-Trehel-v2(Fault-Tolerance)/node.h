@@ -1,5 +1,7 @@
 #include <stdbool.h>
 
+typedef enum state {rest, waiting, active, consulting, candidate, observer, query} state; //Enumeração de estados possíveis de um node.
+
 // Estrutura de dados de um node.
 typedef struct node {
    int self; // Indica o id deste node. (a.k.a. me)
@@ -7,6 +9,9 @@ typedef struct node {
    int next; // Indica o node que receberá o token quando a CRITICAL SECTION for liberada.
    bool tokenPresent; // Indica se este node detém ou não o TOKEN.
    bool requestingCS; // Indica se este node está requisitando ou não acesso à CRITICAL SECTION.
+   int *xc; // Indica o conjunto de nodes que enviaram mensagem "failure".
+   int *x; // Indica o conjunto de nodes da rede.
+   state myState; // Indica o estado em que o node se encontra.
 }s_N;
 
 s_N *initialize_node(void);
