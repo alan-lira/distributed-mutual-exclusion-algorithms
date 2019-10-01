@@ -58,12 +58,16 @@ void destroy_node(s_N *node) {
 
 void perform_cs(s_N *node) {
 
+   node->myState = active;
+
    srand(time(NULL));
 
    int criticalSectionPassageDelay = rand() % 10;
 
    if (criticalSectionPassageDelay == 0) {
+
       criticalSectionPassageDelay = 1;
+
    }
 
    printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, criticalSectionPassageDelay);
@@ -158,8 +162,6 @@ void receive_request_cs(s_N *node, int requestingNode) {
 void receive_token(s_N *node) {
 
    // { Receive the token from node Sj }
-
-   node->myState = active;
 
    node->tokenPresent = true;
 
