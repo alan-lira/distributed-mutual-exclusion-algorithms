@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
    // Criando o node para este processo MPI.
    s_N *node = initialize_node();
 
-   node = create_node(nodeRank);
+   node = create_node(nodeRank, nodeCount);
 
    if (node->self == ELECTED_NODE) { // O node 0 foi eleito, inicialmente, como o TOKEN OWNER...
 

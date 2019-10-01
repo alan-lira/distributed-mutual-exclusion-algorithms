@@ -7,14 +7,37 @@ s_N *initialize_node(void) {
    return NULL;
 }
 
-s_N *create_node(int nodeRank) {
+s_N *create_node(int nodeRank, int nodeCount) {
    s_N *newNode = (s_N*) malloc(sizeof(s_N));
    newNode->self = nodeRank;
    newNode->last = newNode->next = -1;
    newNode->tokenPresent = newNode->requestingCS = false;
-   newNode->x = newNode->xc = NULL;
+   newNode->x = load_x_set_node(nodeRank, nodeCount);
+   newNode->xc = NULL;
    newNode->myState = rest;
    return newNode;
+}
+
+int *load_x_set_node(int nodeRank, int nodeCount) {
+
+   int *x = (int *) malloc((nodeCount - 1) * sizeof(int));
+
+   int i = 0, index = 0;
+
+   for (i = 0; i < nodeCount; i++) {
+
+      if(i != nodeRank) {
+
+         x[index] = i;
+
+         index++;
+
+      }
+
+   }
+
+   return x;
+
 }
 
 void finalize_node(s_N *node, int nodeCount) {

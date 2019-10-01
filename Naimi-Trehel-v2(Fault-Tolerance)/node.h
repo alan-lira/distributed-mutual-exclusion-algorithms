@@ -16,7 +16,9 @@ typedef struct node {
 
 s_N *initialize_node(void);
 
-s_N *create_node(int nodeRank);
+s_N *create_node(int nodeRank, int nodeCount);
+
+int *load_x_set_node(int nodeRank, int nodeCount);
 
 void finalize_node(s_N *node, int nodeCount);
 
