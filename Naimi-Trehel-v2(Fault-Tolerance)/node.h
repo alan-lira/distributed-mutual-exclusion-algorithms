@@ -2,6 +2,7 @@
 
 typedef enum state {rest, waiting, active, consulting, candidate, observer, query} state; //Enumeração de estados possíveis de um node.
 
+// Estrutura de dados de um int array dinâmico.
 typedef struct intArray {
    int *array;
    int arrayLength;

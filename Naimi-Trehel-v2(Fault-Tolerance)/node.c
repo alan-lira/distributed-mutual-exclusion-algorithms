@@ -85,11 +85,11 @@ void broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
    int messageContent = node->self;
 
-   int i = 0;
+   int k = 0;
 
-   for (i = 0; i < node->x->arrayLength; i++) {
+   for (k = 0; k < node->x->arrayLength; k++) {
 
-      int messageDestinataryNode = node->x->array[i];
+      int messageDestinataryNode = node->x->array[k];
 
       MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_MPI_MESSAGE, MPI_COMM_WORLD);
 
@@ -187,6 +187,24 @@ void receive_request_cs(s_N *node, int requestingNode) {
 void receive_token(s_N *node) {
 
    // { Receive the token from node Sj }
+
+   //TO DO: cancel_timer goes here...
+
+   if(node->xc != NULL) {
+
+      int messageContent = node->self;
+
+      int j = 0;
+
+      for (j = 0; j < node->xc->arrayLength; j++) {
+
+         int messageDestinataryNode = node->xc->array[j];
+
+         MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_PRESENT, MPI_COMM_WORLD);
+
+      }
+
+   }
 
    node->tokenPresent = true;
 
