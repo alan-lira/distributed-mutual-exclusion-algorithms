@@ -18,9 +18,12 @@ s_N *create_node(int nodeRank, int nodeCount) {
    return newNode;
 }
 
-int *load_x_set_node(int nodeRank, int nodeCount) {
+s_IA *load_x_set_node(int nodeRank, int nodeCount) {
 
-   int *x = (int *) malloc((nodeCount - 1) * sizeof(int));
+   s_IA *x = malloc(sizeof(s_IA));
+
+   x->array = malloc(sizeof(int) * nodeCount - 1);
+   x->arrayLength = 0;
 
    int i = 0, index = 0;
 
@@ -28,9 +31,11 @@ int *load_x_set_node(int nodeRank, int nodeCount) {
 
       if(i != nodeRank) {
 
-         x[index] = i;
+         x->array[index] = i;
 
          index++;
+
+         x->arrayLength++;
 
       }
 
@@ -73,6 +78,24 @@ void perform_cs(s_N *node) {
    printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, criticalSectionPassageDelay);
 
    sleep(criticalSectionPassageDelay);
+
+}
+
+void broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
+
+   int messageContent = node->self;
+
+   int i = 0;
+
+   for (i = 0; i < node->x->arrayLength; i++) {
+
+      int messageDestinataryNode = node->x->array[i];
+
+      MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_MPI_MESSAGE, MPI_COMM_WORLD);
+
+   }
+
+   //TO DO: start_timer (TELEC) goes here...
 
 }
 
