@@ -121,6 +121,8 @@ void release_cs(s_N *node) {
 
    }
 
+   node->myState = rest;
+
 }
 
 void receive_request_cs(s_N *node, int requestingNode) {
