@@ -76,6 +76,8 @@ void request_cs(s_N *node, int nodeCount) {
 
    printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
 
+   node->myState = waiting;
+
    node->requestingCS = true;
 
    if(node->last != -1) {
@@ -89,6 +91,8 @@ void request_cs(s_N *node, int nodeCount) {
       MPI_Send(&requestingNode, 1, MPI_INT, node->last, TAG_REQUEST, MPI_COMM_WORLD);
 
       node->last = -1;
+
+      //TO DO: start_timer (TWAIT) goes here...
 
    }
 
