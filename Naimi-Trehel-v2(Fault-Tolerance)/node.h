@@ -34,6 +34,8 @@ void perform_cs(s_N *node);
 
 void broadcast_message(s_N *node, int TAG_MPI_MESSAGE);
 
+void timed_out_signal(s_N *node, int nodeCount);
+
 void request_cs(s_N *node, int nodeCount);
 
 void release_cs(s_N *node);

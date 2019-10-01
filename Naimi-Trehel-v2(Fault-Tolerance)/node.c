@@ -99,6 +99,79 @@ void broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
 }
 
+void timed_out_signal(s_N *node, int nodeCount) {
+
+   int myState = node->myState;
+
+   switch(myState) {
+
+      case waiting:
+
+         node->myState = consulting;
+
+         broadcast_message(node, TAG_CONSULT);
+
+         break;
+
+      case consulting:
+
+         node->myState = query;
+
+         broadcast_message(node, TAG_FAILURE);
+
+         break;
+
+      case query:
+
+         node->myState = candidate;
+
+         broadcast_message(node, TAG_ELECTION);
+
+         break;
+
+      case observer:
+
+         node->myState = candidate;
+
+         broadcast_message(node, TAG_ELECTION);
+
+         break;
+
+      case candidate:
+
+         node->tokenPresent = true;
+         node->last = -1;
+         node->xc = NULL;
+         node->next = NULL;
+
+         int messageContent = node->self;
+
+         int k = 0;
+
+         for (k = 0; k < node->x->arrayLength; k++) {
+
+            int messageDestinataryNode = node->x->array[k];
+
+            MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_CANDIDATE_ELECTED, MPI_COMM_WORLD);
+
+         }
+
+         if(node->requestingCS) {
+
+            request_cs(node, nodeCount);
+
+         }else{
+
+            node->myState = rest;
+
+         }
+
+         break;
+
+   }
+
+}
+
 void request_cs(s_N *node, int nodeCount) {
 
    printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
