@@ -1,4 +1,5 @@
 /* CONSTANTS */
+#define NIL -1 // Este atributo do node possui valor indefinido.
 #define ELECTED_NODE 0 // Node eleito, inicialmente, como o TOKEN OWNER.
 
 /* MPI MESSAGE TAGS */

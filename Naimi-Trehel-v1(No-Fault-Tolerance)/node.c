@@ -10,7 +10,7 @@ s_N *initialize_node(void) {
 s_N *create_node(int nodeRank) {
    s_N *newNode = (s_N*) malloc(sizeof(s_N));
    newNode->self = nodeRank;
-   newNode->last = newNode->next = -1;
+   newNode->last = newNode->next = NIL;
    newNode->tokenPresent = newNode->requestingCS = false;
    return newNode;
 }
@@ -55,7 +55,7 @@ void request_cs(s_N *node, int nodeCount) {
 
    node->requestingCS = true;
 
-   if (node->last != -1) {
+   if (node->last != NIL) {
 
       // {The site has not the token, it should request it }
 
@@ -65,7 +65,7 @@ void request_cs(s_N *node, int nodeCount) {
 
       MPI_Send(&requestingNode, 1, MPI_INT, node->last, TAG_REQUEST, MPI_COMM_WORLD);
 
-      node->last = -1;
+      node->last = NIL;
 
    }
 
@@ -77,7 +77,7 @@ void release_cs(s_N *node) {
 
    node->requestingCS = false;
 
-   if (node->next != -1) {
+   if (node->next != NIL) {
 
       int requestingNode = node->next;
 
@@ -86,7 +86,7 @@ void release_cs(s_N *node) {
       MPI_Send(&requestingNode, 1, MPI_INT, node->next, TAG_TOKEN, MPI_COMM_WORLD);
 
       node->tokenPresent = false;
-      node->next = -1;
+      node->next = NIL;
 
    }
 
@@ -96,7 +96,7 @@ void receive_request_cs(s_N *node, int requestingNode) {
 
    // { Sj is the requesting node }
 
-   if (node->last == -1) {
+   if (node->last == NIL) {
 
       // { root node }
 
