@@ -38,7 +38,9 @@ void perform_cs(s_N *node) {
    int criticalSectionPassageDelay = rand() % 10;
 
    if (criticalSectionPassageDelay == 0) {
+
       criticalSectionPassageDelay = 1;
+
    }
 
    printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, criticalSectionPassageDelay);
@@ -53,7 +55,7 @@ void request_cs(s_N *node, int nodeCount) {
 
    node->requestingCS = true;
 
-   if(node->last != -1) {
+   if (node->last != -1) {
 
       // {The site has not the token, it should request it }
 
@@ -75,7 +77,7 @@ void release_cs(s_N *node) {
 
    node->requestingCS = false;
 
-   if(node->next != -1) {
+   if (node->next != -1) {
 
       int requestingNode = node->next;
 
@@ -94,11 +96,11 @@ void receive_request_cs(s_N *node, int requestingNode) {
 
    // { Sj is the requesting node }
 
-   if(node->last == -1) {
+   if (node->last == -1) {
 
       // { root node }
 
-      if(node->requestingCS = true) {
+      if (node->requestingCS = true) {
 
          // { The node asked for the Critical Section }
 
