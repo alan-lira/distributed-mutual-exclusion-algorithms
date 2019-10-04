@@ -29,7 +29,7 @@ s_IA *load_x_set_node(int nodeRank, int nodeCount) {
 
    for (i = 0; i < nodeCount; i++) {
 
-      if(i != nodeRank) {
+      if (i != nodeRank) {
 
          x->array[index] = i;
 
@@ -103,7 +103,7 @@ void timed_out_signal(s_N *node, int nodeCount) {
 
    int myState = node->myState;
 
-   switch(myState) {
+   switch (myState) {
 
       case waiting:
 
@@ -156,11 +156,11 @@ void timed_out_signal(s_N *node, int nodeCount) {
 
          }
 
-         if(node->requestingCS) {
+         if (node->requestingCS) {
 
             request_cs(node, nodeCount);
 
-         }else{
+         } else {
 
             node->myState = rest;
 
@@ -180,7 +180,7 @@ void request_cs(s_N *node, int nodeCount) {
 
    node->requestingCS = true;
 
-   if(node->last != -1) {
+   if (node->last != -1) {
 
       // {The site has not the token, it should request it }
 
@@ -204,7 +204,7 @@ void release_cs(s_N *node) {
 
    node->requestingCS = false;
 
-   if(node->next != -1) {
+   if (node->next != -1) {
 
       int requestingNode = node->next;
 
@@ -225,11 +225,11 @@ void receive_request_cs(s_N *node, int requestingNode) {
 
    // { Sj is the requesting node }
 
-   if(node->last == -1) {
+   if (node->last == -1) {
 
       // { root node }
 
-      if(node->requestingCS = true) {
+      if (node->requestingCS = true) {
 
          // { The node asked for the Critical Section }
 
@@ -263,7 +263,7 @@ void receive_token(s_N *node) {
 
    //TO DO: cancel_timer goes here...
 
-   if(node->xc != NULL) {
+   if (node->xc != NULL) {
 
       int messageContent = node->self;
 

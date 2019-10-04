@@ -23,7 +23,7 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    int requestingNode = 0;
 
-   while(idleNodeCount != nodeCount) {
+   while (idleNodeCount != nodeCount) {
 
       MPI_Status status;
 
@@ -33,7 +33,7 @@ void jobMPIMessageProcessing(const void *parameters) {
 
       int mpiSource = status.MPI_SOURCE;
 
-      switch(mpiTag) {
+      switch (mpiTag) {
 
          case TAG_IDLE: // Este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.
 
