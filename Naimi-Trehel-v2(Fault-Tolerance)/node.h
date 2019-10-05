@@ -1,12 +1,21 @@
 #include <stdbool.h>
 
-typedef enum state {rest, waiting, active, consulting, candidate, observer, query} state; //Enumeração de estados possíveis de um node.
+// Enumeração de estados possíveis de um node.
+typedef enum nodeState {
+   rest,
+   waiting,
+   active,
+   consulting,
+   candidate,
+   observer,
+   query
+} s_NS;
 
 // Estrutura de dados de um int array dinâmico.
 typedef struct intArray {
    int *array;
    int arrayLength;
-}s_IA;
+} s_IA;
 
 // Estrutura de dados de um node.
 typedef struct node {
@@ -17,8 +26,8 @@ typedef struct node {
    bool requestingCS; // Indica se este node está requisitando ou não acesso à CRITICAL SECTION.
    s_IA *xc; // Indica o conjunto de nodes que enviaram mensagem "failure".
    s_IA *x; // Indica o conjunto de nodes da rede.
-   state myState; // Indica o estado em que o node se encontra.
-}s_N;
+   s_NS myState; // Indica o estado em que o node se encontra.
+} s_N;
 
 s_N *initialize_node(void);
 
