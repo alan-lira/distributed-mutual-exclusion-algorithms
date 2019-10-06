@@ -7,7 +7,7 @@ typedef struct node {
    int next; // Indica o node que receberá o token quando a CRITICAL SECTION for liberada.
    bool tokenPresent; // Indica se este node detém ou não o TOKEN.
    bool requestingCS; // Indica se este node está requisitando ou não acesso à CRITICAL SECTION.
-}s_N;
+} s_N;
 
 s_N *initialize_node(void);
 
