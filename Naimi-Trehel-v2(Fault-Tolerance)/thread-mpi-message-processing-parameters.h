@@ -3,7 +3,7 @@
 typedef struct threadMPIMessageProcessingParameters {
    s_N *node;
    int nodeCount;
-}s_TMPIMPP;
+} s_TMPIMPP;
 
 s_TMPIMPP *initialize_thread_parameters(void);
 
