@@ -11,11 +11,11 @@ sem_t g_TokenSemaphore;
 // Job de processamento de mensagens MPI.
 void jobMPIMessageProcessing(const void *parameters) {
 
-   s_MPIMPTP *threadParameters = (s_MPIMPTP*) parameters;
+   s_MPIMPTP *mpiMessageProcessingThreadParameters = (s_MPIMPTP*) parameters;
 
-   s_N *node = threadParameters->node;
+   s_N *node = mpiMessageProcessingThreadParameters->node;
 
-   int nodeCount = threadParameters->nodeCount;
+   int nodeCount = mpiMessageProcessingThreadParameters->nodeCount;
 
    int messageContent = 0;
 
@@ -99,16 +99,16 @@ int main(int argc, char *argv[]) {
 
    }
 
-   // Declaração da thread 'threadMPIMessageProcessing', responsável pelo processamento de mensagens MPI.
-   pthread_t threadMPIMessageProcessing;
+   // Declaração da thread 'mpiMessageProcessingThread', responsável pelo processamento de mensagens MPI.
+   pthread_t mpiMessageProcessingThread;
 
-   // Criando os parâmetros para a thread 'threadMPIMessageProcessing'.
-   s_MPIMPTP *threadParameters = initialize_mpi_message_processing_thread_parameters();
+   // Criando os parâmetros para a thread 'mpiMessageProcessingThread'.
+   s_MPIMPTP *mpiMessageProcessingThreadParameters = initialize_mpi_message_processing_thread_parameters();
 
-   threadParameters = create_mpi_message_processing_thread_parameters(node, nodeCount);
+   mpiMessageProcessingThreadParameters = create_mpi_message_processing_thread_parameters(node, nodeCount);
 
-   // Criando a thread 'threadMPIMessageProcessing', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'threadParameters'.
-   pthread_create(&threadMPIMessageProcessing, NULL, (const void *) jobMPIMessageProcessing, threadParameters);
+   // Criando a thread 'mpiMessageProcessingThread', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'mpiMessageProcessingThreadParameters'.
+   pthread_create(&mpiMessageProcessingThread, NULL, (const void *) jobMPIMessageProcessing, mpiMessageProcessingThreadParameters);
 
    // Este node está requisitando o acesso à CRITICAL SECTION.
    request_cs(node, nodeCount);
@@ -126,15 +126,15 @@ int main(int argc, char *argv[]) {
 
    }
 
-   // Disparando em broadcast para a thread 'threadMPIMessageProcessing'
+   // Disparando em broadcast para a thread 'mpiMessageProcessingThread'
    // que este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.
    finalize_node(node, nodeCount);
 
-   // Aguardando a finalização da thread 'threadMPIMessageProcessing' em cada node.
-   pthread_join(threadMPIMessageProcessing, NULL);
+   // Aguardando a finalização da thread 'mpiMessageProcessingThread' em cada node.
+   pthread_join(mpiMessageProcessingThread, NULL);
 
-   // Desalocando o espaço ocupado na memória pelos parâmetros 'threadParameters'.
-   destroy_mpi_message_processing_thread_parameters(threadParameters);
+   // Desalocando o espaço ocupado na memória pelos parâmetros 'mpiMessageProcessingThreadParameters'.
+   destroy_mpi_message_processing_thread_parameters(mpiMessageProcessingThreadParameters);
 
    // Desalocando o espaço ocupado na memória pelo node.
    destroy_node(node);

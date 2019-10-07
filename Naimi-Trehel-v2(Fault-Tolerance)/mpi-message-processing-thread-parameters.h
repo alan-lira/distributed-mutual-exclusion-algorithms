@@ -9,4 +9,4 @@ s_MPIMPTP *initialize_mpi_message_processing_thread_parameters(void);
 
 s_MPIMPTP *create_mpi_message_processing_thread_parameters(s_N *node, int nodeCount);
 
-void destroy_mpi_message_processing_thread_parameters(s_MPIMPTP *threadParameters);
+void destroy_mpi_message_processing_thread_parameters(s_MPIMPTP *mpiMessageProcessingThreadParameters);
