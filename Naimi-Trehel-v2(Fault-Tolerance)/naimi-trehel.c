@@ -3,7 +3,7 @@
 
 #include "constants.h"
 #include "node.h"
-#include "thread-mpi-message-processing-parameters.h"
+#include "mpi-message-processing-thread-parameters.h"
 
 // Unnamed semaphore (thread-shared semaphore) 'g_TokenSemaphore'.
 sem_t g_TokenSemaphore;
@@ -11,7 +11,7 @@ sem_t g_TokenSemaphore;
 // Job de processamento de mensagens MPI.
 void jobMPIMessageProcessing(const void *parameters) {
 
-   s_TMPIMPP *threadParameters = (s_TMPIMPP*) parameters;
+   s_MPIMPTP *threadParameters = (s_MPIMPTP*) parameters;
 
    s_N *node = threadParameters->node;
 
@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
    pthread_t threadMPIMessageProcessing;
 
    // Criando os parâmetros para a thread 'threadMPIMessageProcessing'.
-   s_TMPIMPP *threadParameters = initialize_thread_parameters();
+   s_MPIMPTP *threadParameters = initialize_mpi_message_processing_thread_parameters();
 
-   threadParameters = create_thread_parameters(node, nodeCount);
+   threadParameters = create_mpi_message_processing_thread_parameters(node, nodeCount);
 
    // Criando a thread 'threadMPIMessageProcessing', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'threadParameters'.
    pthread_create(&threadMPIMessageProcessing, NULL, (const void *) jobMPIMessageProcessing, threadParameters);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
    pthread_join(threadMPIMessageProcessing, NULL);
 
    // Desalocando o espaço ocupado na memória pelos parâmetros 'threadParameters'.
-   destroy_thread_parameters(threadParameters);
+   destroy_mpi_message_processing_thread_parameters(threadParameters);
 
    // Desalocando o espaço ocupado na memória pelo node.
    destroy_node(node);
