@@ -1,5 +1,5 @@
 
-// Estrutura de dados dos parâmetros da thread 'threadMPIMessageProcessing'.
+// Estrutura de dados dos parâmetros da thread 'mpiMessageProcessingThread'.
 typedef struct mpiMessageProcessingThreadParameters {
    s_N *node;
    int nodeCount;
