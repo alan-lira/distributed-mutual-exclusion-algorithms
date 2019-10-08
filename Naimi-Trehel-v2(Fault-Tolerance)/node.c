@@ -308,3 +308,15 @@ void received_consult_message(s_N *node, int requestingNode) {
    }
 
 }
+
+void received_quiet_message(s_N *node, int requestingNode) {
+
+   if (node->myState == consulting) {
+
+      node->myState = waiting;
+
+      //TO DO: start_timer (TWAIT) goes here...
+
+   }
+
+}

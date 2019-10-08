@@ -54,3 +54,5 @@ void received_request_message(s_N *node, int requestingNode);
 void received_token_message(s_N *node);
 
 void received_consult_message(s_N *node, int requestingNode);
+
+void received_quiet_message(s_N *node, int requestingNode);
