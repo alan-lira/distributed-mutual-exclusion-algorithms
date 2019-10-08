@@ -60,3 +60,5 @@ void received_consult_message(s_N *node, int requestingNode);
 void received_quiet_message(s_N *node, int requestingNode);
 
 void received_failure_message(s_N *node, int requestingNode);
+
+void received_election_message(s_N *node, int requestingNode);

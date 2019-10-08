@@ -156,7 +156,8 @@ void received_timeout_signal(s_N *node, int nodeCount) {
 
          node->last = NIL;
 
-         node->xc = NULL;
+         node->xc->array = NULL;
+	 node->xc->arrayLength = 0;
 
          node->next = NIL;
 
@@ -298,7 +299,8 @@ void received_token_message(s_N *node) {
 
       }
 
-      node->xc = NULL;
+      node->xc->array = NULL;
+      node->xc->arrayLength = 0;
 
    }
 
@@ -405,6 +407,78 @@ void received_failure_message(s_N *node, int requestingNode) {
             node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
             node->xc->array[node->xc->arrayLength] = requestingNode;
             node->xc->arrayLength++;
+
+         }
+
+         break;
+
+      case observer:
+
+         //TO DO: start_timer (TELEC) goes here...
+
+         break;
+
+   }
+
+}
+
+void received_election_message(s_N *node, int requestingNode) {
+
+   int myState = node->myState;
+
+   switch (myState) {
+
+      case waiting:
+
+         node->myState = observer;
+
+         node->xc->array = NULL;
+         node->xc->arrayLength = 0;
+
+         //TO DO: start_timer (TELEC) goes here...
+
+         break;
+
+      case rest:
+
+         node->myState = observer;
+
+         node->xc->array = NULL;
+         node->xc->arrayLength = 0;
+
+         //TO DO: start_timer (TELEC) goes here...
+
+         break;
+
+      case consulting:
+
+         node->myState = observer;
+
+         node->xc->array = NULL;
+         node->xc->arrayLength = 0;
+
+         //TO DO: start_timer (TELEC) goes here...
+
+         break;
+
+      case query:
+
+         node->myState = observer;
+
+         node->xc->array = NULL;
+         node->xc->arrayLength = 0;
+
+         //TO DO: start_timer (TELEC) goes here...
+
+         break;
+
+      case candidate:
+
+         if (requestingNode < node->self) {
+
+            node->myState = observer;
+
+            //TO DO: start_timer (TELEC) goes here...
 
          }
 
