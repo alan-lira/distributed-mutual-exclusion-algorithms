@@ -20,8 +20,8 @@ FLAGS   =   -O2 -w -pthread
 
 all: naimi-trehel
 
-naimi-trehel:  naimi-trehel.c node.c mpi-message-processing-thread-parameters.c
-	$(CC) $(FLAGS) naimi-trehel.c -o naimi-trehel node.c mpi-message-processing-thread-parameters.c
+naimi-trehel:  naimi-trehel.c node.c mpi-message-processing-thread-parameters.c timer.c
+	$(CC) $(FLAGS) naimi-trehel.c -o naimi-trehel node.c mpi-message-processing-thread-parameters.c timer.c
 
 clean:  
 	/bin/rm -rf     \

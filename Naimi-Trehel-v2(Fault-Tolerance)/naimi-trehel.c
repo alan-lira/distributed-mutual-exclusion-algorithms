@@ -57,6 +57,54 @@ void jobMPIMessageProcessing(const void *parameters) {
 
             break;
 
+         case TAG_CONSULT: //
+
+	    requestingNode = messageContent;
+
+            received_consult_message(node, requestingNode);
+
+            break;
+
+         case TAG_QUIET: //
+
+	    requestingNode = messageContent;
+
+            received_quiet_message(node, requestingNode);
+
+            break;
+
+         case TAG_FAILURE: //
+
+	    requestingNode = messageContent;
+
+            received_failure_message(node, requestingNode);
+
+            break;
+
+         case TAG_PRESENT: //
+
+	    requestingNode = messageContent;
+
+            received_present_message(node, requestingNode);
+
+            break;
+
+         case TAG_ELECTION: //
+
+	    requestingNode = messageContent;
+
+            received_election_message(node, requestingNode);
+
+            break;
+
+         case TAG_CANDIDATE_ELECTED: //
+
+	    requestingNode = messageContent;
+
+            received_candidate_elected_message(node, requestingNode);
+
+            break;
+
       }
 
    }
@@ -107,6 +155,8 @@ int main(int argc, char *argv[]) {
 
    mpiMessageProcessingThreadParameters = create_mpi_message_processing_thread_parameters(node, nodeCount);
 
+   initialize_timer_thread();
+
    // Criando a thread 'mpiMessageProcessingThread', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'mpiMessageProcessingThreadParameters'.
    pthread_create(&mpiMessageProcessingThread, NULL, (const void *) jobMPIMessageProcessing, mpiMessageProcessingThreadParameters);
 
@@ -132,6 +182,8 @@ int main(int argc, char *argv[]) {
 
    // Aguardando a finalização da thread 'mpiMessageProcessingThread' em cada node.
    pthread_join(mpiMessageProcessingThread, NULL);
+
+   finalize_timer_thread();
 
    // Desalocando o espaço ocupado na memória pelos parâmetros 'mpiMessageProcessingThreadParameters'.
    destroy_mpi_message_processing_thread_parameters(mpiMessageProcessingThreadParameters);

@@ -1,7 +1,10 @@
 #include <mpi.h>
 
 #include "constants.h"
-#include "node.h"
+//#include "node.h"
+#include "timer.h"
+
+size_t timer;
 
 s_N *initialize_node(void) {
    return NULL;
@@ -109,16 +112,24 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
    }
 
    //TO DO: start_timer (TELEC) goes here...
+   timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
 }
 
-void received_timeout_signal(s_N *node) {
+void received_timeout_signal(size_t timerId, void *userData) {
+//void received_timeout_signal(s_N *node) {
+
+   s_N *node = (s_N*) userData;
+
+   printf("(Node %d): TIMEOUT SIGNAL!!\n", node->self);
 
    int myState = node->myState;
 
    switch (myState) {
 
       case waiting:
+
+         printf("(Node %d): Meu timer Twait expirou e não recebi o TOKEN. Talvez tenha ocorrido uma falha no sistema! Enviando a mensagem CONSULT em broadcast...\n\n", node->self);
 
          node->myState = consulting;
 
@@ -127,6 +138,8 @@ void received_timeout_signal(s_N *node) {
          break;
 
       case consulting:
+
+         printf("(Nó %d): Meu timer Telec expirou e não recebi a resposta da mensagem CONSULT! Ocorreu uma falha no sistema! Enviando a mensagem FAILURE em broadcast...\n\n", node->self);
 
          node->myState = query;
 
@@ -210,6 +223,7 @@ void request_c_s(s_N *node) {
       node->last = NIL;
 
       //TO DO: start_timer (TWAIT) goes here...
+      timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
 
    }
 
@@ -284,6 +298,7 @@ void received_token_message(s_N *node) {
    // { Receive the token from node Sj }
 
    //TO DO: cancel_timer goes here...
+   cancel_timer(timer);
 
    if (node->xc != NULL) {
 
@@ -314,6 +329,8 @@ void received_consult_message(s_N *node, int requestingNode) {
 
    if (node->next == requestingNode) {
 
+      printf("(Node %d): O node %d desconfia que houve uma falha, mas ele é o meu NEXT! Respondendo a mensagem CONSULT dele...\n\n", node->self, node->next);
+
       int messageContent = node->self;
 
       MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_QUIET, MPI_COMM_WORLD);
@@ -326,9 +343,12 @@ void received_quiet_message(s_N *node, int requestingNode) {
 
    if (node->myState == consulting) {
 
+      printf("(Node %d): Recebi a resposta da mensagem CONSULT do node %d! Não houve falha no sistema!\n\n", node->self, requestingNode);
+
       node->myState = waiting;
 
       //TO DO: start_timer (TWAIT) goes here...
+      timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
 
    }
 
@@ -415,6 +435,7 @@ void received_failure_message(s_N *node, int requestingNode) {
       case observer:
 
          //TO DO: start_timer (TELEC) goes here...
+         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          break;
 
@@ -436,6 +457,7 @@ void received_election_message(s_N *node, int requestingNode) {
          node->xc->arrayLength = 0;
 
          //TO DO: start_timer (TELEC) goes here...
+         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          break;
 
@@ -447,6 +469,7 @@ void received_election_message(s_N *node, int requestingNode) {
          node->xc->arrayLength = 0;
 
          //TO DO: start_timer (TELEC) goes here...
+         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          break;
 
@@ -458,6 +481,7 @@ void received_election_message(s_N *node, int requestingNode) {
          node->xc->arrayLength = 0;
 
          //TO DO: start_timer (TELEC) goes here...
+         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          break;
 
@@ -469,6 +493,7 @@ void received_election_message(s_N *node, int requestingNode) {
          node->xc->arrayLength = 0;
 
          //TO DO: start_timer (TELEC) goes here...
+         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          break;
 
@@ -479,6 +504,7 @@ void received_election_message(s_N *node, int requestingNode) {
             node->myState = observer;
 
             //TO DO: start_timer (TELEC) goes here...
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          }
 
@@ -487,6 +513,7 @@ void received_election_message(s_N *node, int requestingNode) {
       case observer:
 
          //TO DO: start_timer (TELEC) goes here...
+         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
          break;
 
@@ -499,6 +526,7 @@ void received_present_message(s_N *node, int requestingNode) {
    if (node->myState == query) {
 
       //TO DO: cancel_timer goes here...
+      cancel_timer(timer);
 
       node->last = requestingNode;
 
@@ -513,6 +541,7 @@ void received_present_message(s_N *node, int requestingNode) {
 void received_candidate_elected_message(s_N *node, int requestingNode) {
 
    //TO DO: cancel_timer goes here...
+   cancel_timer(timer);
 
    node->last = requestingNode;
 

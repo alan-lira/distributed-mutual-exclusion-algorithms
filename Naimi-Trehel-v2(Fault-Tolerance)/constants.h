@@ -2,7 +2,7 @@
 #define NIL -1 // Este atributo do node possui valor indefinido.
 #define ELECTED_NODE 0 // Node eleito, inicialmente, como o TOKEN OWNER.
 #define TWAIT 2 // Estimativa (em segundos) de atraso máximo para a presunção de falha.
-#define TELEC 4 // Estimativa (em segundos) de atraso máximo para a realização de broadcasting (envio de uma pergunta e recebimento de respostas).
+#define TELEC 3 // Estimativa (em segundos) de atraso máximo para a realização de broadcasting (envio de uma pergunta e recebimento de respostas).
 
 /* MPI MESSAGE TAGS */
 #define TAG_IDLE 0 // Este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.
