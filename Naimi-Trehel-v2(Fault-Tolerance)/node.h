@@ -45,9 +45,9 @@ void perform_c_s(s_N *node);
 
 void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE);
 
-void received_timeout_signal(s_N *node, int nodeCount);
+void received_timeout_signal(s_N *node);
 
-void request_c_s(s_N *node, int nodeCount);
+void request_c_s(s_N *node);
 
 void release_c_s(s_N *node);
 
@@ -62,3 +62,5 @@ void received_quiet_message(s_N *node, int requestingNode);
 void received_failure_message(s_N *node, int requestingNode);
 
 void received_election_message(s_N *node, int requestingNode);
+
+void received_present_message(s_N *node, int requestingNode);

@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
    pthread_create(&mpiMessageProcessingThread, NULL, (const void *) jobMPIMessageProcessing, mpiMessageProcessingThreadParameters);
 
    // Este node está requisitando o acesso à CRITICAL SECTION.
-   request_c_s(node, nodeCount);
+   request_c_s(node);
 
    // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
    int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);

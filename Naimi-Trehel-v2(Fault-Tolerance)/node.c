@@ -112,7 +112,7 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
 }
 
-void received_timeout_signal(s_N *node, int nodeCount) {
+void received_timeout_signal(s_N *node) {
 
    int myState = node->myState;
 
@@ -175,7 +175,7 @@ void received_timeout_signal(s_N *node, int nodeCount) {
 
          if (node->requestingCS == true) {
 
-            request_c_s(node, nodeCount);
+            request_c_s(node);
 
          } else {
 
@@ -189,7 +189,7 @@ void received_timeout_signal(s_N *node, int nodeCount) {
 
 }
 
-void request_c_s(s_N *node, int nodeCount) {
+void request_c_s(s_N *node) {
 
    printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
 
@@ -489,6 +489,22 @@ void received_election_message(s_N *node, int requestingNode) {
          //TO DO: start_timer (TELEC) goes here...
 
          break;
+
+   }
+
+}
+
+void received_present_message(s_N *node, int requestingNode) {
+
+   if (node->myState == query) {
+
+      //TO DO: cancel_timer goes here...
+
+      node->last = requestingNode;
+
+      node->next = NIL;
+
+      request_c_s(node);
 
    }
 
