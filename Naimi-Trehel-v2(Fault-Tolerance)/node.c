@@ -10,8 +10,10 @@ s_N *initialize_node(void) {
 s_N *create_node(int nodeRank, int nodeCount) {
    s_N *newNode = (s_N*) malloc(sizeof(s_N));
    newNode->self = nodeRank;
-   newNode->last = newNode->next = NIL;
-   newNode->tokenPresent = newNode->requestingCS = false;
+   newNode->last = NIL;
+   newNode->next = NIL;
+   newNode->tokenPresent = false;
+   newNode->requestingCS = false;
    newNode->x = load_x_set_node(nodeRank, nodeCount);
    newNode->xc = NULL;
    newNode->myState = rest;
@@ -67,21 +69,21 @@ void perform_c_s(s_N *node) {
 
    srand(time(NULL));
 
-   int criticalSectionPassageDelay = rand() % 10;
+   int criticalSectionPerformanceDelay = rand() % 10;
 
-   if (criticalSectionPassageDelay == 0) {
+   if (criticalSectionPerformanceDelay == 0) {
 
-      criticalSectionPassageDelay = 1;
+      criticalSectionPerformanceDelay = 1;
 
    }
 
-   printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, criticalSectionPassageDelay);
+   printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, criticalSectionPerformanceDelay);
 
-   sleep(criticalSectionPassageDelay);
+   sleep(criticalSectionPerformanceDelay);
 
 }
 
-void broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
+void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
    int messageContent = node->self;
 
@@ -99,7 +101,7 @@ void broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
 }
 
-void timed_out_signal(s_N *node, int nodeCount) {
+void received_timeout_signal(s_N *node, int nodeCount) {
 
    int myState = node->myState;
 
@@ -109,7 +111,7 @@ void timed_out_signal(s_N *node, int nodeCount) {
 
          node->myState = consulting;
 
-         broadcast_message(node, TAG_CONSULT);
+         send_broadcast_message(node, TAG_CONSULT);
 
          break;
 
@@ -117,7 +119,7 @@ void timed_out_signal(s_N *node, int nodeCount) {
 
          node->myState = query;
 
-         broadcast_message(node, TAG_FAILURE);
+         send_broadcast_message(node, TAG_FAILURE);
 
          break;
 
@@ -125,7 +127,7 @@ void timed_out_signal(s_N *node, int nodeCount) {
 
          node->myState = candidate;
 
-         broadcast_message(node, TAG_ELECTION);
+         send_broadcast_message(node, TAG_ELECTION);
 
          break;
 
@@ -133,16 +135,19 @@ void timed_out_signal(s_N *node, int nodeCount) {
 
          node->myState = candidate;
 
-         broadcast_message(node, TAG_ELECTION);
+         send_broadcast_message(node, TAG_ELECTION);
 
          break;
 
       case candidate:
 
          node->tokenPresent = true;
+
          node->last = NIL;
+
          node->xc = NULL;
-         node->next = NULL;
+
+         node->next = NIL;
 
          int messageContent = node->self;
 
@@ -186,9 +191,9 @@ void request_c_s(s_N *node, int nodeCount) {
 
       printf("(Node %d): Não tenho o TOKEN, vou solicitá-lo ao node %d!\n\n", node->self, node->last);
 
-      int requestingNode = node->self;
+      int messageContent = node->self;
 
-      MPI_Send(&requestingNode, 1, MPI_INT, node->last, TAG_REQUEST, MPI_COMM_WORLD);
+      MPI_Send(&messageContent, 1, MPI_INT, node->last, TAG_REQUEST, MPI_COMM_WORLD);
 
       node->last = NIL;
 
@@ -206,13 +211,14 @@ void release_c_s(s_N *node) {
 
    if (node->next != NIL) {
 
-      int requestingNode = node->next;
-
       printf("(Node %d): O node %d quer acessar a CRITICAL SECTION, vou encaminhar o TOKEN para ele!\n\n", node->self, node->next);
 
-      MPI_Send(&requestingNode, 1, MPI_INT, node->next, TAG_TOKEN, MPI_COMM_WORLD);
-
       node->tokenPresent = false;
+
+      int messageContent = node->next;
+
+      MPI_Send(&messageContent, 1, MPI_INT, node->next, TAG_TOKEN, MPI_COMM_WORLD);
+
       node->next = NIL;
 
    }
@@ -241,7 +247,9 @@ void received_request_message(s_N *node, int requestingNode) {
 
          node->tokenPresent = false;
 
-         MPI_Send(&requestingNode, 1, MPI_INT, requestingNode, TAG_TOKEN, MPI_COMM_WORLD);
+         int messageContent = requestingNode;
+
+         MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_TOKEN, MPI_COMM_WORLD);
 
       }
 
@@ -249,7 +257,9 @@ void received_request_message(s_N *node, int requestingNode) {
 
       // { Non-root node, forward the request }
 
-      MPI_Send(&requestingNode, 1, MPI_INT, node->last, TAG_REQUEST, MPI_COMM_WORLD);
+      int messageContent = requestingNode;
+
+      MPI_Send(&messageContent, 1, MPI_INT, node->last, TAG_REQUEST, MPI_COMM_WORLD);
 
    }
 
@@ -276,6 +286,8 @@ void received_token_message(s_N *node) {
          MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_PRESENT, MPI_COMM_WORLD);
 
       }
+
+      node->xc = NULL;
 
    }
 

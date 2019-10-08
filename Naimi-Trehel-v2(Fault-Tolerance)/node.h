@@ -24,9 +24,9 @@ typedef struct node {
    int next; // Indica o node que receberá o token quando a CRITICAL SECTION for liberada.
    bool tokenPresent; // Indica se este node detém ou não o TOKEN.
    bool requestingCS; // Indica se este node está requisitando ou não acesso à CRITICAL SECTION.
-   s_IA *xc; // Indica o conjunto de nodes que enviaram mensagem "failure".
    s_IA *x; // Indica o conjunto de nodes da rede.
-   s_NS myState; // Indica o estado em que o node se encontra.
+   s_IA *xc; // Indica o conjunto de nodes que estão atualmente no estado 'consulting'.
+   s_NS myState; // Indica o estado atual do node.
 } s_N;
 
 s_N *initialize_node(void);
@@ -41,9 +41,9 @@ void destroy_node(s_N *node);
 
 void perform_c_s(s_N *node);
 
-void broadcast_message(s_N *node, int TAG_MPI_MESSAGE);
+void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE);
 
-void timed_out_signal(s_N *node, int nodeCount);
+void received_timeout_signal(s_N *node, int nodeCount);
 
 void request_c_s(s_N *node, int nodeCount);
 
