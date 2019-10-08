@@ -64,3 +64,5 @@ void received_failure_message(s_N *node, int requestingNode);
 void received_election_message(s_N *node, int requestingNode);
 
 void received_present_message(s_N *node, int requestingNode);
+
+void received_candidate_elected_message(s_N *node, int requestingNode);

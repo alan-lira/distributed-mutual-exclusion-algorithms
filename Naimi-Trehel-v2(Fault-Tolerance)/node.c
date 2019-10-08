@@ -509,3 +509,26 @@ void received_present_message(s_N *node, int requestingNode) {
    }
 
 }
+
+void received_candidate_elected_message(s_N *node, int requestingNode) {
+
+   //TO DO: cancel_timer goes here...
+
+   node->last = requestingNode;
+
+   node->xc->array = NULL;
+   node->xc->arrayLength = 0;
+
+   node->next = NIL;
+
+   if (node->requestingCS == true) {
+
+      request_c_s(node);
+
+   } else {
+
+      node->myState = rest;
+
+   }
+
+}
