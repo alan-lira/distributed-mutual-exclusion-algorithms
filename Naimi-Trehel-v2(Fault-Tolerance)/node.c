@@ -247,7 +247,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
          node->tokenPresent = false;
 
-         int messageContent = requestingNode;
+         int messageContent = node->self;
 
          MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_TOKEN, MPI_COMM_WORLD);
 
@@ -294,5 +294,17 @@ void received_token_message(s_N *node) {
    node->tokenPresent = true;
 
    printf("(Node %d): Recebi o TOKEN!\n\n", node->self);
+
+}
+
+void received_consult_message(s_N *node, int requestingNode) {
+
+   if (node->next == requestingNode) {
+
+      int messageContent = node->self;
+
+      MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_QUIET, MPI_COMM_WORLD);
+
+   }
 
 }
