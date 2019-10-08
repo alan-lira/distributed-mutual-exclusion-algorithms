@@ -47,6 +47,17 @@ s_IA *load_x_set_node(int nodeRank, int nodeCount) {
 
 }
 
+s_IA *load_xc_set_node() {
+
+   s_IA *xc = malloc(sizeof(s_IA));
+
+   xc->array = NULL;
+   xc->arrayLength = 0;
+
+   return xc;
+
+}
+
 void finalize_node(s_N *node, int nodeCount) {
 
    for (int nodeRank = 0; nodeRank < nodeCount; nodeRank++) {
@@ -123,7 +134,7 @@ void received_timeout_signal(s_N *node, int nodeCount) {
 
          break;
 
-      case query:
+      case observer:
 
          node->myState = candidate;
 
@@ -131,7 +142,7 @@ void received_timeout_signal(s_N *node, int nodeCount) {
 
          break;
 
-      case observer:
+      case query:
 
          node->myState = candidate;
 
@@ -161,7 +172,7 @@ void received_timeout_signal(s_N *node, int nodeCount) {
 
          }
 
-         if (node->requestingCS) {
+         if (node->requestingCS == true) {
 
             request_c_s(node, nodeCount);
 
@@ -235,7 +246,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
       // { root node }
 
-      if (node->requestingCS = true) {
+      if (node->requestingCS == true) {
 
          // { The node asked for the Critical Section }
 
@@ -316,6 +327,94 @@ void received_quiet_message(s_N *node, int requestingNode) {
       node->myState = waiting;
 
       //TO DO: start_timer (TWAIT) goes here...
+
+   }
+
+}
+
+void received_failure_message(s_N *node, int requestingNode) {
+
+   int myState = node->myState;
+
+   switch (myState) {
+
+      case waiting:
+
+         if (node->tokenPresent == true) {
+
+            int messageContent = node->self;
+
+            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
+
+         } else {
+
+            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+            node->xc->array[node->xc->arrayLength] = requestingNode;
+            node->xc->arrayLength++;
+
+         }
+
+         break;
+
+      case rest:
+
+         if (node->tokenPresent == true) {
+
+            int messageContent = node->self;
+
+            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
+
+         } else {
+
+            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+            node->xc->array[node->xc->arrayLength] = requestingNode;
+            node->xc->arrayLength++;
+
+         }
+
+         break;
+
+      case active:
+
+         if (node->tokenPresent == true) {
+
+            int messageContent = node->self;
+
+            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
+
+         } else {
+
+            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+            node->xc->array[node->xc->arrayLength] = requestingNode;
+            node->xc->arrayLength++;
+
+         }
+
+         break;
+
+      case consulting:
+
+         if (node->tokenPresent == true) {
+
+            int messageContent = node->self;
+
+            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
+
+         } else {
+
+            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+            node->xc->array[node->xc->arrayLength] = requestingNode;
+            node->xc->arrayLength++;
+
+         }
+
+         break;
+
+      case observer:
+
+         //TO DO: start_timer (TELEC) goes here...
+
+         break;
 
    }
 

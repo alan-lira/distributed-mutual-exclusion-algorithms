@@ -25,7 +25,7 @@ typedef struct node {
    bool tokenPresent; // Indica se este node detém ou não o TOKEN.
    bool requestingCS; // Indica se este node está requisitando ou não acesso à CRITICAL SECTION.
    s_IA *x; // Indica o conjunto de nodes da rede.
-   s_IA *xc; // Indica o conjunto de nodes que estão atualmente no estado 'consulting'.
+   s_IA *xc; // Indica o conjunto de nodes que me enviaram a mensagem "failure".
    s_NS myState; // Indica o estado atual do node.
 } s_N;
 
@@ -34,6 +34,8 @@ s_N *initialize_node(void);
 s_N *create_node(int nodeRank, int nodeCount);
 
 s_IA *load_x_set_node(int nodeRank, int nodeCount);
+
+s_IA *load_xc_set_node();
 
 void finalize_node(s_N *node, int nodeCount);
 
@@ -56,3 +58,5 @@ void received_token_message(s_N *node);
 void received_consult_message(s_N *node, int requestingNode);
 
 void received_quiet_message(s_N *node, int requestingNode);
+
+void received_failure_message(s_N *node, int requestingNode);
