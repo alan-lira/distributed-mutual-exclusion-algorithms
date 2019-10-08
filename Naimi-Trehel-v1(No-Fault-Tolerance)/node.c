@@ -103,7 +103,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
       // { root node }
 
-      if (node->requestingCS = true) {
+      if (node->requestingCS == true) {
 
          // { The node asked for the Critical Section }
 
