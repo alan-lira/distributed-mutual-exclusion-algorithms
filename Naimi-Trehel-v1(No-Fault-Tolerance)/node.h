@@ -19,7 +19,7 @@ void destroy_node(s_N *node);
 
 void perform_c_s(s_N *node);
 
-void request_c_s(s_N *node, int nodeCount);
+void request_c_s(s_N *node);
 
 void release_c_s(s_N *node);
 

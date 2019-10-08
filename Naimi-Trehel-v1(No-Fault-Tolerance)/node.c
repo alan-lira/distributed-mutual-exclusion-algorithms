@@ -51,7 +51,7 @@ void perform_c_s(s_N *node) {
 
 }
 
-void request_c_s(s_N *node, int nodeCount) {
+void request_c_s(s_N *node) {
 
    printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
 
