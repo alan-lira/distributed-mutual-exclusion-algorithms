@@ -17,12 +17,12 @@ void finalize_node(s_N *node, int nodeCount);
 
 void destroy_node(s_N *node);
 
-void perform_cs(s_N *node);
+void perform_c_s(s_N *node);
 
-void request_cs(s_N *node, int nodeCount);
+void request_c_s(s_N *node, int nodeCount);
 
-void release_cs(s_N *node);
+void release_c_s(s_N *node);
 
-void receive_request_cs(s_N *node, int requestingNode);
+void received_request_message(s_N *node, int requestingNode);
 
-void receive_token(s_N *node);
+void received_token_message(s_N *node);

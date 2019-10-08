@@ -31,7 +31,7 @@ void destroy_node(s_N *node) {
    free(node);
 }
 
-void perform_cs(s_N *node) {
+void perform_c_s(s_N *node) {
 
    srand(time(NULL));
 
@@ -49,7 +49,7 @@ void perform_cs(s_N *node) {
 
 }
 
-void request_cs(s_N *node, int nodeCount) {
+void request_c_s(s_N *node, int nodeCount) {
 
    printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
 
@@ -71,7 +71,7 @@ void request_cs(s_N *node, int nodeCount) {
 
 }
 
-void release_cs(s_N *node) {
+void release_c_s(s_N *node) {
 
    printf("(Node %d): Terminei de acessar a CRITICAL SECTION!\n\n", node->self);
 
@@ -92,7 +92,7 @@ void release_cs(s_N *node) {
 
 }
 
-void receive_request_cs(s_N *node, int requestingNode) {
+void received_request_message(s_N *node, int requestingNode) {
 
    // { Sj is the requesting node }
 
@@ -128,7 +128,7 @@ void receive_request_cs(s_N *node, int requestingNode) {
 
 }
 
-void receive_token(s_N *node) {
+void received_token_message(s_N *node) {
 
    // { Receive the token from node Sj }
 
