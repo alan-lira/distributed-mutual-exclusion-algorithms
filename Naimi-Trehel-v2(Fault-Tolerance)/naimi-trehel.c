@@ -45,13 +45,13 @@ void jobMPIMessageProcessing(const void *parameters) {
 
 	    requestingNode = messageContent;
 
-            receive_request_cs(node, requestingNode);
+            received_request_message(node, requestingNode);
 
             break;
 
          case TAG_TOKEN: // Eu (node) estou recebendo o TOKEN para acessar a CRITICAL SECTION.
 
-            receive_token(node);
+            received_token_message(node);
 
 	    sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
    if (node->self == ELECTED_NODE) { // O node 0 foi eleito, inicialmente, como o TOKEN OWNER...
 
-      receive_token(node);
+      received_token_message(node);
 
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 1 (TOKEN OWNER = true).
       sem_init(&g_TokenSemaphore, 0, 1);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
    pthread_create(&mpiMessageProcessingThread, NULL, (const void *) jobMPIMessageProcessing, mpiMessageProcessingThreadParameters);
 
    // Este node está requisitando o acesso à CRITICAL SECTION.
-   request_cs(node, nodeCount);
+   request_c_s(node, nodeCount);
 
    // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
    int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);
@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
    if (semaphoreLockedConfirmed == 0) {
 
       // Este node está simulando o acesso à CRITICAL SECTION.
-      perform_cs(node);
+      perform_c_s(node);
 
       // Este node está liberando o acesso à CRITICAL SECTION.
-      release_cs(node);
+      release_c_s(node);
 
    }
 
