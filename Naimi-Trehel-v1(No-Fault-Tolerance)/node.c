@@ -115,7 +115,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
          node->tokenPresent = false;
 
-         int messageContent = requestingNode;
+         int messageContent = node->self;
 
          MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_TOKEN, MPI_COMM_WORLD);
 
