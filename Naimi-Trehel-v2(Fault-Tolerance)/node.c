@@ -1,7 +1,6 @@
 #include <mpi.h>
 
 #include "constants.h"
-//#include "node.h"
 #include "timer.h"
 
 size_t timer;
@@ -117,7 +116,6 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 }
 
 void received_timeout_signal(size_t timerId, void *userData) {
-//void received_timeout_signal(s_N *node) {
 
    s_N *node = (s_N*) userData;
 
@@ -139,7 +137,7 @@ void received_timeout_signal(size_t timerId, void *userData) {
 
       case consulting:
 
-         printf("(Nó %d): Meu timer Telec expirou e não recebi a resposta da mensagem CONSULT! Ocorreu uma falha no sistema! Enviando a mensagem FAILURE em broadcast...\n\n", node->self);
+         printf("(Node %d): Meu timer Telec expirou e não recebi a resposta da mensagem CONSULT! Ocorreu uma falha no sistema! Enviando a mensagem FAILURE em broadcast...\n\n", node->self);
 
          node->myState = query;
 

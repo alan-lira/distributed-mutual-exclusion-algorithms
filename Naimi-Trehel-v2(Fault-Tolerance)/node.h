@@ -45,7 +45,6 @@ void perform_c_s(s_N *node);
 
 void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE);
 
-//void received_timeout_signal(s_N *node);
 void received_timeout_signal(size_t timerId, void *userData);
 
 void request_c_s(s_N *node);
