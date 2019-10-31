@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 
    } else { // Atribuindo o node 0 como TOKEN OWNER dos demais nodes...
 
-      node->last = ELECTED_NODE;
+      node->father = ELECTED_NODE;
 
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 0 (TOKEN OWNER = false).
       sem_init(&g_TokenSemaphore, 0, 0);
