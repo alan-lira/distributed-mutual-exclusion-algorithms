@@ -3,7 +3,7 @@
 // Estrutura de dados de um node.
 typedef struct node {
    int self; // Indica o id deste node. (a.k.a. me)
-   int last; // Indica o provável atual TOKEN OWNER. (a.k.a. owner, father) 
+   int father; // Indica o provável atual TOKEN OWNER. (a.k.a. owner, last) 
    int next; // Indica o node que receberá o token quando a CRITICAL SECTION for liberada.
    bool tokenPresent; // Indica se este node detém ou não o TOKEN.
    bool requestingCS; // Indica se este node está requisitando ou não acesso à CRITICAL SECTION.
