@@ -29,6 +29,11 @@ TRY IT OUT:
          4.2) make
 
       5) Run the following instructions to EXECUTE:
-         5.1) mpiexec -np X naimi-trehel (Where X equals to number of MPI processes)
+         5.1) mpiexec -np X naimi-trehel
+
+         (Where X equals to number of MPI processes)
+
+            5.1.1) Include -p argument to print node events on terminal.
+            5.1.2) Include -l argument to log node events into file.
 
 -------------------------------------

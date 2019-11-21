@@ -55,6 +55,8 @@ void jobMPIMessageProcessing(const void *parameters) {
 
 	    sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
 
+            node->receivedTokenTime = MPI_Wtime();
+
             break;
 
       }
@@ -62,6 +64,18 @@ void jobMPIMessageProcessing(const void *parameters) {
    }
 
    printf("----- (Node %d): Encerrei o meu jobMPIMessageProcessing! -----\n\n", node->self);
+
+   if (node->loggingEvents == true) {
+
+      memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+      sprintf(node->logBuffer, "(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
+
+      write_mpi_log_event(node->logFile, node->logBuffer);
+
+   }
+
+   printf("(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
 
 }
 
@@ -78,24 +92,65 @@ int main(int argc, char *argv[]) {
    // Atribuindo à variável 'nodeCount' o número de processos MPI.
    MPI_Comm_size(MPI_COMM_WORLD, &nodeCount);
 
+   bool printingEvents = false, loggingEvents = false;
+
+   // Obtendo argumentos passados ao programa (-p e -l).
+   for (int argIndex = 0; argIndex < argc; argIndex++) {
+
+      // Habilitar print.
+      if (strcmp("-p", argv[argIndex]) == 0) {
+
+         printingEvents = true;
+
+      }
+
+      // Habilitar log.
+      if (strcmp("-l", argv[argIndex]) == 0) {
+
+         loggingEvents = true;
+
+      }
+
+   }
+
    // Criando o node para este processo MPI.
    s_N *node = initialize_node();
 
-   node = create_node(nodeRank);
+   node = create_node(nodeRank, printingEvents, loggingEvents);
+
+   // Inicializando o ambiente MPI_LOG.
+   if (node->loggingEvents == true) {
+
+      start_mpi_log_environment(node->logFile);
+
+   }
 
    if (node->self == ELECTED_NODE) { // O node 0 foi eleito, inicialmente, como o TOKEN OWNER...
-
-      received_token_message(node);
 
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 1 (TOKEN OWNER = true).
       sem_init(&g_TokenSemaphore, 0, 1);
 
    } else { // Atribuindo o node 0 como TOKEN OWNER dos demais nodes...
 
-      node->father = ELECTED_NODE;
-
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 0 (TOKEN OWNER = false).
       sem_init(&g_TokenSemaphore, 0, 0);
+
+   }
+
+   // Log pós-execução do procedimento 'create_node' para este node.
+   if (node->loggingEvents == true) {
+
+      memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+      char auxFather[5];
+      sprintf(auxFather, "%d", node->father);
+
+      char auxNext[5];
+      sprintf(auxNext, "%d", node->next);
+
+      sprintf(node->logBuffer, "(Node %d): Terminei de executar 'create_node' [node->father = %s | node->next = %s | node->requestingCS = %s | node->tokenPresent = %s]\n", node->self, node->father == -1 ? "NIL" : auxFather, node->next == -1 ? "NIL" : auxNext, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false");
+
+      write_mpi_log_event(node->logFile, node->logBuffer);
 
    }
 
@@ -135,6 +190,13 @@ int main(int argc, char *argv[]) {
 
    // Desalocando o espaço ocupado na memória pelos parâmetros 'mpiMessageProcessingThreadParameters'.
    destroy_mpi_message_processing_thread_parameters(mpiMessageProcessingThreadParameters);
+
+   // Finalizando o ambiente MPI_LOG.
+   if (node->loggingEvents == true) {
+
+      close_mpi_log_environment(node->logFile);
+
+   }
 
    // Desalocando o espaço ocupado na memória pelo node.
    destroy_node(node);
