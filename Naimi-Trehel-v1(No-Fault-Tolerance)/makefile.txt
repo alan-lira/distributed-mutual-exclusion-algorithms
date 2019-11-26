@@ -13,7 +13,7 @@ CC    =   mpicc
 #CC    =   mpipgcc
 
 #Flags
-FLAGS   =   -O2 -w -pthread -std=c99
+FLAGS   =   -O2 -w -pthread
 # -02:  Optimization Level 2 -> Enables (-O1); inline small functions;
 # -w:   Enables extra flags not enabled by -Wall, such as -Wsign-compare (C only), -Wtype-limits, -Wuninitialized...
 # -pthread: Adds support for multithreading with the pthreads library. This option sets flags for both the preprocessor and linker.
@@ -27,7 +27,3 @@ clean:
 	/bin/rm -rf     \
 	naimi-trehel    \
         *.o
-
-
-
-

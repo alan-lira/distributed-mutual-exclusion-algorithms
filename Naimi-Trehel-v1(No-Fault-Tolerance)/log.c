@@ -12,22 +12,27 @@ void write_mpi_log_event(MPI_File *logFile, char *logBuffer) {
 
    char *aux1LogBuffer = logBuffer;
 
-   char aux2LogBuffer[100];
+   char aux2LogBuffer[2048];
 
    int log_event_index = log_file_line_counter() + 1;
 
    sprintf(aux2LogBuffer, "[EVENTO %d] ===> ", log_event_index);
 
-   char *logBufferIndexed = malloc(strlen(aux1LogBuffer) + strlen(aux2LogBuffer) + 1);
+   char *logBufferIndexed = malloc(sizeof(char) * (strlen(aux1LogBuffer) + strlen(aux2LogBuffer) + 10));
 
    strcpy(logBufferIndexed, aux2LogBuffer);
    strcat(logBufferIndexed, aux1LogBuffer);
 
    MPI_File log = *logFile;
 
+   //MPI_File_write_shared is a blocking routine that uses the shared file pointer to write files. The order of serialization is not deterministic for this noncollective routine.
    MPI_File_write_shared(log, logBufferIndexed, strlen(logBufferIndexed), MPI_CHAR, MPI_STATUS_IGNORE);
 
-   free(logBufferIndexed);
+   if (logBufferIndexed) {
+
+      free(logBufferIndexed);
+
+   }
 
 }
 
@@ -39,7 +44,7 @@ void close_mpi_log_environment(MPI_File *logFile) {
 
 int log_file_line_counter() {
 
-   FILE *fp;
+   FILE *fp = NULL;
 
    int lineCounter = 0;
 

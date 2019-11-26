@@ -21,7 +21,7 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    int idleNodeCount = 0;
 
-   int requestingNode = 0;
+   int nodeSj = 0;
 
    while (idleNodeCount != nodeCount) {
 
@@ -43,9 +43,9 @@ void jobMPIMessageProcessing(const void *parameters) {
 
          case TAG_REQUEST: // Existe um node Sj (messageContent) solicitando para mim (node) o TOKEN para acessar a CRITICAL SECTION.
 
-	    requestingNode = messageContent;
+	    nodeSj = messageContent;
 
-            received_request_message(node, requestingNode);
+            received_request_message(node, nodeSj);
 
             break;
 
@@ -55,7 +55,19 @@ void jobMPIMessageProcessing(const void *parameters) {
 
 	    sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
 
-            node->receivedTokenTime = MPI_Wtime();
+            node->receivedTokenTime = MPI_Wtime(); // Fim do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               sprintf(node->logBuffer, "(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+            }
+
+            printf("(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
 
             break;
 
@@ -63,19 +75,11 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    }
 
-   printf("----- (Node %d): Encerrei o meu jobMPIMessageProcessing! -----\n\n", node->self);
+   if (node->printingEvents == true) {
 
-   if (node->loggingEvents == true) {
-
-      memset(node->logBuffer, 0, sizeof(node->logBuffer));
-
-      sprintf(node->logBuffer, "(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
-
-      write_mpi_log_event(node->logFile, node->logBuffer);
+      printf("----- (Node %d): Encerrei o meu jobMPIMessageProcessing! -----\n\n", node->self);
 
    }
-
-   printf("(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
 
 }
 
@@ -167,6 +171,8 @@ int main(int argc, char *argv[]) {
 
    // Este node está requisitando o acesso à CRITICAL SECTION.
    request_c_s(node);
+
+   node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
    // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
    int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);

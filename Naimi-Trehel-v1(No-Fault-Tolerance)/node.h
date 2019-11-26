@@ -13,8 +13,8 @@ typedef struct node {
    bool loggingEvents; // Indica se este node irá gerar ou não um log de eventos de solicitação e acesso à CRITICAL SECTION.
    MPI_File *logFile; // Indica o arquivo MPI_File associado ao log de eventos dos nodes.
    char *logBuffer; // Indica o buffer associado ao log de eventos dos nodes.
-   double requestedTokenTime; // Indica o tempo cronológico no qual este node solicitou o TOKEN.
-   double receivedTokenTime; // Indica o tempo cronológico no qual este node recebeu o TOKEN.
+   double requestedTokenTime; // Indica o início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+   double receivedTokenTime; // Indica o fim do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 } s_N;
 
 s_N *initialize_node(void);
@@ -31,6 +31,6 @@ void request_c_s(s_N *node);
 
 void release_c_s(s_N *node);
 
-void received_request_message(s_N *node, int requestingNode);
+void received_request_message(s_N *node, int nodeSj);
 
 void received_token_message(s_N *node);

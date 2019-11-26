@@ -47,6 +47,8 @@ void finalize_node(s_N *node, int nodeCount) {
 }
 
 void destroy_node(s_N *node) {
+   free(node->logFile);
+   free(node->logBuffer);
    free(node);
 }
 
@@ -204,19 +206,19 @@ void release_c_s(s_N *node) {
 
 }
 
-void received_request_message(s_N *node, int requestingNode) {
+void received_request_message(s_N *node, int nodeSj) {
 
    if (node->father == NIL) { // { root node }
 
       if (node->requestingCS == true) { // { The root node asked for the Critical Section }
 
-         node->next = requestingNode;
+         node->next = nodeSj;
 
          if (node->loggingEvents == true) {
 
             memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-            sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, mas quero acessar a CRITICAL SECTION. Enviarei para ele em seguida! [node->tokenPresent = %s | node->requestingCS = %s | node->next = %d]\n", node->self, requestingNode, node->tokenPresent ? "true" : "false", node->requestingCS ? "true" : "false", node->next);
+            sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, mas quero acessar a CRITICAL SECTION. Enviarei para ele em seguida! [node->tokenPresent = %s | node->requestingCS = %s | node->next = %d]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", node->requestingCS ? "true" : "false", node->next);
 
             write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -224,7 +226,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
          if (node->printingEvents == true) {
 
-            printf("(Node %d): O node %d pediu o TOKEN, mas quero acessar a CRITICAL SECTION. Enviarei para ele em seguida!\n\n", node->self, requestingNode);
+            printf("(Node %d): O node %d pediu o TOKEN, mas quero acessar a CRITICAL SECTION. Enviarei para ele em seguida!\n\n", node->self, nodeSj);
 
          }
 
@@ -234,7 +236,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
             memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-            sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, vou encaminhá-lo pois não quero acessar a CRITICAL SECTION! [node->tokenPresent = %s | node->requestingCS = %s | node->next = %d]\n", node->self, requestingNode, node->tokenPresent ? "true" : "false", node->requestingCS ? "true" : "false", node->next);
+            sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, vou encaminhá-lo pois não quero acessar a CRITICAL SECTION! [node->tokenPresent = %s | node->requestingCS = %s | node->next = %d]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", node->requestingCS ? "true" : "false", node->next);
 
             write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -242,7 +244,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
          if (node->printingEvents == true) {
 
-            printf("(Node %d): O node %d pediu o TOKEN, vou encaminhá-lo pois não quero acessar a CRITICAL SECTION!\n\n", node->self, requestingNode);
+            printf("(Node %d): O node %d pediu o TOKEN, vou encaminhá-lo pois não quero acessar a CRITICAL SECTION!\n\n", node->self, nodeSj);
 
          }
 
@@ -250,7 +252,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
          int messageContent = node->self;
 
-         MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_TOKEN, MPI_COMM_WORLD); // Send Token() to i
+         MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_TOKEN, MPI_COMM_WORLD); // Send Token() to i
 
       }
 
@@ -260,7 +262,7 @@ void received_request_message(s_N *node, int requestingNode) {
 
          memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-         sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, mas não está comigo! Encaminharei a sua solicitação para o meu father! [node->tokenPresent = %s | node->father = %d | node->requestingCS = %s | node->next = %d]\n", node->self, requestingNode, node->tokenPresent ? "true" : "false", node->father, node->requestingCS ? "true" : "false", node->next);
+         sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, mas não está comigo! Encaminharei a sua solicitação para o meu father! [node->tokenPresent = %s | node->father = %d | node->requestingCS = %s | node->next = %d]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", node->father, node->requestingCS ? "true" : "false", node->next);
 
          write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -268,17 +270,17 @@ void received_request_message(s_N *node, int requestingNode) {
 
       if (node->printingEvents == true) {
 
-         printf("(Node %d): O node %d pediu o TOKEN, mas não está comigo! Encaminharei a sua solicitação para o meu father!\n\n", node->self, requestingNode);
+         printf("(Node %d): O node %d pediu o TOKEN, mas não está comigo! Encaminharei a sua solicitação para o meu father!\n\n", node->self, nodeSj);
 
       }
 
-      int messageContent = requestingNode;
+      int messageContent = nodeSj;
 
       MPI_Send(&messageContent, 1, MPI_INT, node->father, TAG_REQUEST, MPI_COMM_WORLD); // Send Request(i) to father
 
    }
 
-   node->father = requestingNode;
+   node->father = nodeSj;
 
    if (node->loggingEvents == true) {
 
