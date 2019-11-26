@@ -5,8 +5,7 @@
 #include "node.h"
 #include "mpi-message-processing-thread-parameters.h"
 
-// Unnamed semaphore (thread-shared semaphore) 'g_TokenSemaphore'.
-sem_t g_TokenSemaphore;
+sem_t g_TokenSemaphore; // Unnamed semaphore (thread-shared semaphore) 'g_TokenSemaphore'.
 
 // Job de processamento de mensagens MPI.
 void jobMPIMessageProcessing(const void *parameters) {
@@ -21,7 +20,7 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    int idleNodeCount = 0;
 
-   int requestingNode = 0;
+   int nodeSj = 0;
 
    while (idleNodeCount != nodeCount) {
 
@@ -43,9 +42,9 @@ void jobMPIMessageProcessing(const void *parameters) {
 
          case TAG_REQUEST: // Existe um node Sj (messageContent) solicitando para mim (node) o TOKEN para acessar a CRITICAL SECTION.
 
-	    requestingNode = messageContent;
+	    nodeSj = messageContent;
 
-            received_request_message(node, requestingNode);
+            received_request_message(node, nodeSj);
 
             break;
 
@@ -55,53 +54,72 @@ void jobMPIMessageProcessing(const void *parameters) {
 
 	    sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
 
-            break;
+            node->receivedTokenTime = MPI_Wtime(); // Fim do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
-         case TAG_CONSULT: //
+            if (node->loggingEvents == true) {
 
-	    requestingNode = messageContent;
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-            received_consult_message(node, requestingNode);
+               sprintf(node->logBuffer, "(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
 
-            break;
+               write_mpi_log_event(node->logFile, node->logBuffer);
 
-         case TAG_QUIET: //
+            }
 
-	    requestingNode = messageContent;
-
-            received_quiet_message(node, requestingNode);
+            printf("(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
 
             break;
 
-         case TAG_FAILURE: //
+         case TAG_CONSULT: // Existe um node Sj (messageContent) verificando se é o meu NEXT.
 
-	    requestingNode = messageContent;
+	    nodeSj = messageContent;
 
-            received_failure_message(node, requestingNode);
-
-            break;
-
-         case TAG_PRESENT: //
-
-	    requestingNode = messageContent;
-
-            received_present_message(node, requestingNode);
+            received_consult_message(node, nodeSj);
 
             break;
 
-         case TAG_ELECTION: //
+         case TAG_QUIET: // Eu (node) estou recebendo a confirmação do node Sj (messageContent) de que não houve uma falha.
 
-	    requestingNode = messageContent;
+	    nodeSj = messageContent;
 
-            received_election_message(node, requestingNode);
+            received_quiet_message(node, nodeSj);
 
             break;
 
-         case TAG_CANDIDATE_ELECTED: //
+         case TAG_FAILURE: // Existe um node Sj (messageContent) verificando se o TOKEN está comigo.
 
-	    requestingNode = messageContent;
+	    nodeSj = messageContent;
 
-            received_candidate_elected_message(node, requestingNode);
+            received_failure_message(node, nodeSj);
+
+            break;
+
+         case TAG_PRESENT: // Eu (node) estou recebendo a confirmação de que o TOKEN está sob posse do node Sj (messageContent).
+
+	    nodeSj = messageContent;
+
+            received_present_message(node, nodeSj);
+
+            break;
+
+         case TAG_ELECTION: // O node Sj (messageContent) se candidatou para regenerar o TOKEN perdido.
+
+	    nodeSj = messageContent;
+
+            received_election_message(node, nodeSj);
+
+            break;
+
+         case TAG_CANDIDATE_ELECTED: // O node Sj (messageContent) foi eleito para regenerar o TOKEN perdido.
+
+	    nodeSj = messageContent;
+
+            received_candidate_elected_message(node, nodeSj);
+
+            break;
+
+         case TAG_FAILED_NODE: // Recebimento de uma mensagem enviada por um node Sj que falhou.
+                               //(O envio desta mensagem é necessário para garantir a consistência entre mensagens MPI).
 
             break;
 
@@ -109,7 +127,11 @@ void jobMPIMessageProcessing(const void *parameters) {
 
    }
 
-   printf("----- (Node %d): Encerrei o meu jobMPIMessageProcessing! -----\n\n", node->self);
+   if (node->printingEvents == true) {
+
+      printf("----- (Node %d): Encerrei o meu jobMPIMessageProcessing! -----\n\n", node->self);
+
+   }
 
 }
 
@@ -126,24 +148,65 @@ int main(int argc, char *argv[]) {
    // Atribuindo à variável 'nodeCount' o número de processos MPI.
    MPI_Comm_size(MPI_COMM_WORLD, &nodeCount);
 
+   bool printingEvents = false, loggingEvents = false;
+
+   // Obtendo argumentos passados ao programa (-p e -l).
+   for (int argIndex = 0; argIndex < argc; argIndex++) {
+
+      // Habilitar print.
+      if (strcmp("-p", argv[argIndex]) == 0) {
+
+         printingEvents = true;
+
+      }
+
+      // Habilitar log.
+      if (strcmp("-l", argv[argIndex]) == 0) {
+
+         loggingEvents = true;
+
+      }
+
+   }
+
    // Criando o node para este processo MPI.
    s_N *node = initialize_node();
 
-   node = create_node(nodeRank, nodeCount);
+   node = create_node(nodeRank, nodeCount, printingEvents, loggingEvents);
+
+   // Inicializando o ambiente MPI_LOG.
+   if (node->loggingEvents == true) {
+
+      start_mpi_log_environment(node->logFile);
+
+   }
 
    if (node->self == ELECTED_NODE) { // O node 0 foi eleito, inicialmente, como o TOKEN OWNER...
-
-      received_token_message(node);
 
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 1 (TOKEN OWNER = true).
       sem_init(&g_TokenSemaphore, 0, 1);
 
    } else { // Atribuindo o node 0 como TOKEN OWNER dos demais nodes...
 
-      node->father = ELECTED_NODE;
-
       // Inicializando o semáforo 'g_TokenSemaphore' com o valor 0 (TOKEN OWNER = false).
       sem_init(&g_TokenSemaphore, 0, 0);
+
+   }
+
+   // Log pós-execução do procedimento 'create_node' para este node.
+   if (node->loggingEvents == true) {
+
+      memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+      char auxFather[5];
+      sprintf(auxFather, "%d", node->father);
+
+      char auxNext[5];
+      sprintf(auxNext, "%d", node->next);
+
+      sprintf(node->logBuffer, "(Node %d): Terminei de executar 'create_node' [node->father = %s | node->next = %s | node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, node->father == -1 ? "NIL" : auxFather, node->next == -1 ? "NIL" : auxNext, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", stateToString(node));
+
+      write_mpi_log_event(node->logFile, node->logBuffer);
 
    }
 
@@ -155,13 +218,39 @@ int main(int argc, char *argv[]) {
 
    mpiMessageProcessingThreadParameters = create_mpi_message_processing_thread_parameters(node, nodeCount);
 
+   // Inicializando o ambiente TIMER.
    initialize_timer_thread();
 
    // Criando a thread 'mpiMessageProcessingThread', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'mpiMessageProcessingThreadParameters'.
    pthread_create(&mpiMessageProcessingThread, NULL, (const void *) jobMPIMessageProcessing, mpiMessageProcessingThreadParameters);
 
+   // Testando falhas de nodes.
+
+   int *arrayFailedNodes = (int *) malloc(sizeof(int) * nodeCount);
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   // Settando nodes falhos.
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true;
+
+   }
+
+   // Desalocando o array de failed nodes.
+   free(arrayFailedNodes);
+
    // Este node está requisitando o acesso à CRITICAL SECTION.
    request_c_s(node);
+
+   node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
    // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
    int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);
@@ -176,6 +265,8 @@ int main(int argc, char *argv[]) {
 
    }
 
+   sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
+
    // Disparando em broadcast para a thread 'mpiMessageProcessingThread'
    // que este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.
    finalize_node(node, nodeCount);
@@ -183,6 +274,14 @@ int main(int argc, char *argv[]) {
    // Aguardando a finalização da thread 'mpiMessageProcessingThread' em cada node.
    pthread_join(mpiMessageProcessingThread, NULL);
 
+   // Finalizando o ambiente MPI_LOG.
+   if (node->loggingEvents == true) {
+
+      close_mpi_log_environment(node->logFile);
+
+   }
+
+   // Finalizando o ambiente TIMER.
    finalize_timer_thread();
 
    // Desalocando o espaço ocupado na memória pelos parâmetros 'mpiMessageProcessingThreadParameters'.

@@ -1,5 +1,6 @@
 #include <mpi.h>
 
+#include <stdio.h>
 #include "constants.h"
 #include "timer.h"
 
@@ -9,17 +10,36 @@ s_N *initialize_node(void) {
    return NULL;
 }
 
-s_N *create_node(int nodeRank, int nodeCount) {
+s_N *create_node(int nodeRank, int nodeCount, bool printingEvents, bool loggingEvents) {
+
    s_N *newNode = (s_N*) malloc(sizeof(s_N));
+
    newNode->self = nodeRank;
-   newNode->father = NIL;
+   newNode->father = ELECTED_NODE;
    newNode->next = NIL;
-   newNode->tokenPresent = false;
    newNode->requestingCS = false;
+   newNode->tokenPresent = (newNode->father == nodeRank);
+
+   if (newNode->father == nodeRank) {
+      newNode->father = NIL;
+   }
+
    newNode->x = load_x_set_node(nodeRank, nodeCount);
-   newNode->xc = NULL;
+   newNode->xc = load_xc_set_node();
    newNode->myState = rest;
+
+   // Inicializando atributos de print e log.
+   newNode->printingEvents = printingEvents;
+   newNode->loggingEvents = loggingEvents;
+   MPI_File *logFile = malloc(sizeof(MPI_File));
+   newNode->logFile = logFile;
+   char *logBuffer = malloc(sizeof(char) * 2048);
+   newNode->logBuffer = logBuffer;
+
+   newNode->failed = false;
+
    return newNode;
+
 }
 
 s_IA *load_x_set_node(int nodeRank, int nodeCount) {
@@ -60,7 +80,165 @@ s_IA *load_xc_set_node() {
 
 }
 
+char *stateToString(s_N *node) {
+
+   char *stateToString = malloc(sizeof(char) * 20);
+
+   switch (node->myState) {
+
+      case rest:
+
+         strcpy(stateToString, "rest");
+
+         break;
+
+      case waiting:
+
+         strcpy(stateToString, "waiting");
+
+         break;
+
+      case active:
+
+         strcpy(stateToString, "active");
+
+         break;
+
+      case consulting:
+
+         strcpy(stateToString, "consulting");
+
+         break;
+
+      case candidate:
+
+         strcpy(stateToString, "candidate");
+
+         break;
+
+      case observer:
+
+         strcpy(stateToString, "observer");
+
+         break;
+
+      case query:
+
+         strcpy(stateToString, "query");
+
+         break;
+
+   }
+
+   return stateToString;
+
+}
+
+char *tagToString(int TAG_MPI_MESSAGE) {
+
+   char *tagToString = malloc(sizeof(char) * 25);
+
+   switch (TAG_MPI_MESSAGE) {
+
+      case 0: // TAG_IDLE
+
+         strcpy(tagToString, "\'IDLE\'");
+
+         break;
+
+      case 1: // TAG_REQUEST
+
+         strcpy(tagToString, "\'REQUEST\'");
+
+         break;
+
+      case 2: // TAG_TOKEN
+
+         strcpy(tagToString, "\'TOKEN\'");
+
+         break;
+
+      case 3: // TAG_CONSULT
+
+         strcpy(tagToString, "\'CONSULT\'");
+
+         break;
+
+      case 4: // TAG_QUIET
+
+         strcpy(tagToString, "\'QUIET\'");
+
+         break;
+
+      case 5: // TAG_FAILURE
+
+         strcpy(tagToString, "\'FAILURE\'");
+
+         break;
+
+      case 6: // TAG_PRESENT
+
+         strcpy(tagToString, "\'PRESENT\'");
+
+         break;
+
+      case 7: // TAG_ELECTION
+
+         strcpy(tagToString, "\'ELECTION\'");
+
+         break;
+
+      case 8: // TAG_CANDIDATE_ELECTED
+
+         strcpy(tagToString, "\'CANDIDATE ELECTED\'");
+
+         break;
+
+   }
+
+   return tagToString;
+
+}
+
+char *setToString(s_IA *set) {
+
+   s_IA *auxSet = set;
+
+   char *setToString = malloc(sizeof(char) * 1000);
+
+   int i = 0;
+
+   strcat(setToString, "{");
+
+   for (i = 0; i < auxSet->arrayLength; i++) {
+
+      int someInt = auxSet->array[i];
+
+      char str[5];
+
+      if (i == auxSet->arrayLength - 1) { // Último node do conjunto.
+
+         sprintf(str, "%d", someInt);
+
+      } else {
+
+         sprintf(str, "%d, ", someInt);
+
+      }
+
+      strcat(setToString, str);
+
+   }
+
+   strcat(setToString, "}");
+
+   return setToString;
+
+}
+
 void finalize_node(s_N *node, int nodeCount) {
+
+   cancel_timer(timer); // Pode acontecer de haver algum timer ativo neste node durante a finalização, cancelando por garantia...
 
    for (int nodeRank = 0; nodeRank < nodeCount; nodeRank++) {
 
@@ -73,45 +251,100 @@ void finalize_node(s_N *node, int nodeCount) {
 }
 
 void destroy_node(s_N *node) {
+   free(node->x);
+   free(node->xc);
+   free(node->logFile);
+   free(node->logBuffer);
    free(node);
 }
 
 void perform_c_s(s_N *node) {
 
-   node->myState = active;
+   if (node->failed == false) {
 
-   srand(time(NULL));
+      node->myState = active;
 
-   int criticalSectionPerformanceDelay = rand() % 10;
+      if (node->loggingEvents == true) {
 
-   if (criticalSectionPerformanceDelay == 0) {
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-      criticalSectionPerformanceDelay = 1;
+         char *state = stateToString(node);
+
+         sprintf(node->logBuffer, "(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)... [node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, C_S_PASSAGE_DELAY, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+         free(state);
+
+      }
+
+      if (node->printingEvents == true) {
+
+         printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, C_S_PASSAGE_DELAY);
+
+      }
+
+      sleep(C_S_PASSAGE_DELAY);
 
    }
-
-   printf("(Node %d): Acessando a CRITICAL SECTION por %d segundo(s)...\n\n", node->self, criticalSectionPerformanceDelay);
-
-   sleep(criticalSectionPerformanceDelay);
 
 }
 
 void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
-   int messageContent = node->self;
+   if (node->failed == false) {
 
-   int k = 0;
+      int messageContent = node->self;
 
-   for (k = 0; k < node->x->arrayLength; k++) {
+      int k = 0;
 
-      int messageDestinataryNode = node->x->array[k];
+      for (k = 0; k < node->x->arrayLength; k++) {
 
-      MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_MPI_MESSAGE, MPI_COMM_WORLD);
+         int messageDestinataryNode = node->x->array[k];
+
+         MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_MPI_MESSAGE, MPI_COMM_WORLD);
+
+      }
+
+      if (node->loggingEvents == true) {
+
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+         char *tag = tagToString(TAG_MPI_MESSAGE);
+
+         char *set = setToString(node->x);
+
+         char *state = stateToString(node);
+
+         sprintf(node->logBuffer, "(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Ativei o meu timer 'Telec'. [node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, tag, set, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+         free(tag);
+
+         free(set);
+
+         free(state);
+
+      }
+
+      if (node->printingEvents == true) {
+
+         char *tag = tagToString(TAG_MPI_MESSAGE);
+
+         char *set = setToString(node->x);
+
+         printf("(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Ativei o meu timer 'Telec'.\n\n", node->self, tag, set);
+
+         free(tag);
+
+         free(set);
+
+      }
+
+      timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
    }
-
-   //TO DO: start_timer (TELEC) goes here...
-   timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
 
 }
 
@@ -119,82 +352,240 @@ void received_timeout_signal(size_t timerId, void *userData) {
 
    s_N *node = (s_N*) userData;
 
-   printf("(Node %d): TIMEOUT SIGNAL!!\n", node->self);
+   if (node->failed == false) {
 
-   int myState = node->myState;
+      int myState = node->myState;
 
-   switch (myState) {
+      switch (myState) {
 
-      case waiting:
+         case waiting:
 
-         printf("(Node %d): Meu timer Twait expirou e não recebi o TOKEN. Talvez tenha ocorrido uma falha no sistema! Enviando a mensagem CONSULT em broadcast...\n\n", node->self);
+            node->myState = consulting;
 
-         node->myState = consulting;
+            if (node->loggingEvents == true) {
 
-         send_broadcast_message(node, TAG_CONSULT);
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-         break;
+               char *tag = tagToString(TAG_CONSULT);
 
-      case consulting:
+               char *state = stateToString(node);
 
-         printf("(Node %d): Meu timer Telec expirou e não recebi a resposta da mensagem CONSULT! Ocorreu uma falha no sistema! Enviando a mensagem FAILURE em broadcast...\n\n", node->self);
+               sprintf(node->logBuffer, "(Node %d): Meu timer 'Twait' expirou e não recebi o TOKEN. Talvez tenha ocorrido uma falha no sistema! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
 
-         node->myState = query;
+               write_mpi_log_event(node->logFile, node->logBuffer);
 
-         send_broadcast_message(node, TAG_FAILURE);
+               free(tag);
 
-         break;
+               free(state);
 
-      case observer:
+            }
 
-         node->myState = candidate;
+            if (node->printingEvents == true) {
 
-         send_broadcast_message(node, TAG_ELECTION);
+               char *tag = tagToString(TAG_CONSULT);
 
-         break;
+               printf("(Node %d): Meu timer 'Twait' expirou e não recebi o TOKEN. Talvez tenha ocorrido uma falha no sistema! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
 
-      case query:
+               free(tag);
 
-         node->myState = candidate;
+            }
 
-         send_broadcast_message(node, TAG_ELECTION);
+            send_broadcast_message(node, TAG_CONSULT);
 
-         break;
+            break;
 
-      case candidate:
+         case consulting:
 
-         node->tokenPresent = true;
+            node->myState = query;
 
-         node->father = NIL;
+            if (node->loggingEvents == true) {
 
-         node->xc->array = NULL;
-	 node->xc->arrayLength = 0;
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-         node->next = NIL;
+               char *tag = tagToString(TAG_FAILURE);
 
-         int messageContent = node->self;
+               char *state = stateToString(node);
 
-         int k = 0;
+               sprintf(node->logBuffer, "(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'CONSULT'! Ocorreu uma falha no sistema! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
 
-         for (k = 0; k < node->x->arrayLength; k++) {
+               write_mpi_log_event(node->logFile, node->logBuffer);
 
-            int messageDestinataryNode = node->x->array[k];
+               free(tag);
 
-            MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_CANDIDATE_ELECTED, MPI_COMM_WORLD);
+               free(state);
 
-         }
+            }
 
-         if (node->requestingCS == true) {
+            if (node->printingEvents == true) {
 
-            request_c_s(node);
+               char *tag = tagToString(TAG_FAILURE);
 
-         } else {
+               printf("(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'CONSULT'! Ocorreu uma falha no sistema! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
 
-            node->myState = rest;
+               free(tag);
 
-         }
+            }
 
-         break;
+            send_broadcast_message(node, TAG_FAILURE);
+
+            break;
+
+         case observer:
+
+            node->myState = candidate;
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *tag = tagToString(TAG_ELECTION);
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'PRESENT'! o TOKEN foi perdido! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(tag);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               char *tag = tagToString(TAG_ELECTION);
+
+               printf("(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'PRESENT'! o TOKEN foi perdido! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
+
+               free(tag);
+
+            }
+
+            send_broadcast_message(node, TAG_ELECTION);
+
+            break;
+
+         case query:
+
+            node->myState = candidate;
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *tag = tagToString(TAG_ELECTION);
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'PRESENT'! o TOKEN foi perdido! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(tag);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               char *tag = tagToString(TAG_ELECTION);
+
+               printf("(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'PRESENT'! o TOKEN foi perdido! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
+
+               free(tag);
+
+            }
+
+            send_broadcast_message(node, TAG_ELECTION);
+
+            break;
+
+         case candidate:
+
+            MPI_Send(&node->self, 1, MPI_INT, node->self, TAG_TOKEN, MPI_COMM_WORLD); // Necessário auto-envio de mensagem do TOKEN para dar unlock no tokenSemaphore.
+
+            node->father = NIL;
+
+            node->xc->array = NULL;
+            node->xc->arrayLength = 0;
+
+            node->next = NIL;
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *tag = tagToString(TAG_CANDIDATE_ELECTED);
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): Fui o candidato eleito e regenerei o TOKEN! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(tag);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               char *tag = tagToString(TAG_CANDIDATE_ELECTED);
+
+               printf("(Node %d): Fui o candidato eleito e regenerei o TOKEN! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
+
+               free(tag);
+
+            }
+
+            int messageContent = node->self;
+
+            int k = 0;
+
+            for (k = 0; k < node->x->arrayLength; k++) {
+
+               int messageDestinataryNode = node->x->array[k];
+
+               MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_CANDIDATE_ELECTED, MPI_COMM_WORLD);
+
+            }
+
+            if (node->requestingCS == true) {
+
+               request_c_s(node);
+
+            } else {
+
+               node->myState = rest;
+
+            }
+
+            break;
+
+      }
+
+      if (node->loggingEvents == true) {
+
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+         char auxFather[5];
+         sprintf(auxFather, "%d", node->father);
+
+         char auxNext[5];
+         sprintf(auxNext, "%d", node->next);
+
+         char *state = stateToString(node);
+
+         sprintf(node->logBuffer, "(Node %d): Terminei de executar 'received_timeout_signal' [node->father = %s | node->next = %s | node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, node->father == -1 ? "NIL" : auxFather, node->next == -1 ? "NIL" : auxNext, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+         free(state);
+
+      }
 
    }
 
@@ -202,26 +593,79 @@ void received_timeout_signal(size_t timerId, void *userData) {
 
 void request_c_s(s_N *node) {
 
-   printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
+   if (node->failed == false) {
 
-   node->myState = waiting;
+      node->myState = waiting;
 
-   node->requestingCS = true;
+      node->requestingCS = true;
 
-   if (node->father != NIL) {
+      if (node->loggingEvents == true) {
 
-      // {The site has not the token, it should request it }
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-      printf("(Node %d): Não tenho o TOKEN, vou solicitá-lo ao node %d!\n\n", node->self, node->father);
+         char *state = stateToString(node);
 
-      int messageContent = node->self;
+         sprintf(node->logBuffer, "(Node %d): Quero acessar a CRITICAL SECTION... [node->requestingCS = %s | node->myState = %s]\n", node->self, node->requestingCS ? "true" : "false", state);
 
-      MPI_Send(&messageContent, 1, MPI_INT, node->father, TAG_REQUEST, MPI_COMM_WORLD);
+         write_mpi_log_event(node->logFile, node->logBuffer);
 
-      node->father = NIL;
+         free(state);
 
-      //TO DO: start_timer (TWAIT) goes here...
-      timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
+      }
+
+      if (node->printingEvents == true) {
+
+         printf("(Node %d): Quero acessar a CRITICAL SECTION...\n\n", node->self);
+
+      }
+
+      if (node->father != NIL) { // {The site has not the token, it should request it}
+
+         if (node->loggingEvents == true) {
+
+            memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+            sprintf(node->logBuffer, "(Node %d): Não tenho o TOKEN, vou solicitá-lo ao node %d! Ativei o meu timer 'Twait'. [node->tokenPresent = %s | node->father = %d]\n", node->self, node->father, node->tokenPresent ? "true" : "false", node->father);
+
+            write_mpi_log_event(node->logFile, node->logBuffer);
+
+         }
+
+         if (node->printingEvents == true) {
+
+            printf("(Node %d): Não tenho o TOKEN, vou solicitá-lo ao node %d! Ativei o meu timer 'Twait'.\n\n", node->self, node->father);
+
+         }
+
+         int messageContent = node->self;
+
+         MPI_Send(&messageContent, 1, MPI_INT, node->father, TAG_REQUEST, MPI_COMM_WORLD); // Send Request(i) to father
+
+         node->father = NIL;
+
+         timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
+
+      }
+
+      if (node->loggingEvents == true) {
+
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+         char auxFather[5];
+         sprintf(auxFather, "%d", node->father);
+
+         char auxNext[5];
+         sprintf(auxNext, "%d", node->next);
+
+         char *state = stateToString(node);
+
+         sprintf(node->logBuffer, "(Node %d): Terminei de executar 'request_c_s' [node->father = %s | node->next = %s | node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, node->father == -1 ? "NIL" : auxFather, node->next == -1 ? "NIL" : auxNext, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+         free(state);
+
+      }
 
    }
 
@@ -229,332 +673,787 @@ void request_c_s(s_N *node) {
 
 void release_c_s(s_N *node) {
 
-   printf("(Node %d): Terminei de acessar a CRITICAL SECTION!\n\n", node->self);
+   if (node->failed == false) {
 
-   node->requestingCS = false;
+      node->requestingCS = false;
 
-   if (node->next != NIL) {
+      if (node->loggingEvents == true) {
 
-      printf("(Node %d): O node %d quer acessar a CRITICAL SECTION, vou encaminhar o TOKEN para ele!\n\n", node->self, node->next);
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-      node->tokenPresent = false;
+         sprintf(node->logBuffer, "(Node %d): Terminei de acessar a CRITICAL SECTION! [node->requestingCS = %s]\n", node->self, node->requestingCS ? "true" : "false");
 
-      int messageContent = node->next;
+         write_mpi_log_event(node->logFile, node->logBuffer);
 
-      MPI_Send(&messageContent, 1, MPI_INT, node->next, TAG_TOKEN, MPI_COMM_WORLD);
+      }
 
-      node->next = NIL;
+      if (node->printingEvents == true) {
 
-   }
+         printf("(Node %d): Terminei de acessar a CRITICAL SECTION!\n\n", node->self);
 
-   node->myState = rest;
+      }
 
-}
+      if (node->next != NIL) {
 
-void received_request_message(s_N *node, int requestingNode) {
+         if (node->loggingEvents == true) {
 
-   // { Sj is the requesting node }
+            memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-   if (node->father == NIL) {
+            sprintf(node->logBuffer, "(Node %d): O node %d quer acessar a CRITICAL SECTION, vou encaminhar o TOKEN para ele! [node->next = %d]\n", node->self, node->next, node->next);
 
-      // { root node }
+            write_mpi_log_event(node->logFile, node->logBuffer);
 
-      if (node->requestingCS == true) {
+         }
 
-         // { The node asked for the Critical Section }
+         if (node->printingEvents == true) {
 
-         node->next = requestingNode;
+            printf("(Node %d): O node %d quer acessar a CRITICAL SECTION, vou encaminhar o TOKEN para ele!\n\n", node->self, node->next);
 
-      } else {
-
-         // { First request to the token since the last CS: send the token directly to the requesting node }
+         }
 
          node->tokenPresent = false;
 
-         int messageContent = node->self;
+         int messageContent = node->next;
 
-         MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_TOKEN, MPI_COMM_WORLD);
+         MPI_Send(&messageContent, 1, MPI_INT, node->next, TAG_TOKEN, MPI_COMM_WORLD); // Send Token() to next
+
+         node->next = NIL;
+
+      }
+
+      node->myState = rest;
+
+      if (node->loggingEvents == true) {
+
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+         char auxFather[5];
+         sprintf(auxFather, "%d", node->father);
+
+         char auxNext[5];
+         sprintf(auxNext, "%d", node->next);
+
+         char *state = stateToString(node);
+
+         sprintf(node->logBuffer, "(Node %d): Terminei de executar 'release_c_s' [node->father = %s | node->next = %s | node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, node->father == -1 ? "NIL" : auxFather, node->next == -1 ? "NIL" : auxNext, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+         free(state);
+
+      }
+
+   }
+
+}
+
+void received_request_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      if (node->father == NIL) { // { root node }
+
+         if (node->requestingCS == true) { // { The root node asked for the Critical Section }
+
+            node->next = nodeSj;
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, mas quero acessar a CRITICAL SECTION. Enviarei para ele em seguida! [node->tokenPresent = %s | node->requestingCS = %s | node->next = %d]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", node->requestingCS ? "true" : "false", node->next);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d pediu o TOKEN, mas quero acessar a CRITICAL SECTION. Enviarei para ele em seguida!\n\n", node->self, nodeSj);
+
+            }
+
+         } else { // { First request to the token since the last CS: send the token directly to the requesting node }
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, vou encaminhá-lo pois não quero acessar a CRITICAL SECTION! [node->tokenPresent = %s | node->requestingCS = %s | node->next = %d]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", node->requestingCS ? "true" : "false", node->next);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d pediu o TOKEN, vou encaminhá-lo pois não quero acessar a CRITICAL SECTION!\n\n", node->self, nodeSj);
+
+            }
+
+            node->tokenPresent = false;
+
+            int messageContent = node->self;
+
+            MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_TOKEN, MPI_COMM_WORLD); // Send Token() to i
+
+         }
+
+      } else { // { Non-root node, forward the request }
+
+         if (node->loggingEvents == true) {
+
+            memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+            sprintf(node->logBuffer, "(Node %d): O node %d pediu o TOKEN, mas não está comigo! Encaminharei a sua solicitação para o meu father! [node->tokenPresent = %s | node->father = %d | node->requestingCS = %s | node->next = %d]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", node->father, node->requestingCS ? "true" : "false", node->next);
+
+            write_mpi_log_event(node->logFile, node->logBuffer);
+
+         }
+
+         if (node->printingEvents == true) {
+
+            printf("(Node %d): O node %d pediu o TOKEN, mas não está comigo! Encaminharei a sua solicitação para o meu father!\n\n", node->self, nodeSj);
+
+         }
+
+         int messageContent = nodeSj;
+
+         MPI_Send(&messageContent, 1, MPI_INT, node->father, TAG_REQUEST, MPI_COMM_WORLD); // Send Request(i) to father
+
+      }
+
+      node->father = nodeSj;
+
+      if (node->loggingEvents == true) {
+
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+         char auxFather[5];
+         sprintf(auxFather, "%d", node->father);
+
+         char auxNext[5];
+         sprintf(auxNext, "%d", node->next);
+
+         char *state = stateToString(node);
+
+         sprintf(node->logBuffer, "(Node %d): Terminei de executar 'received_request_message' [node->father = %s | node->next = %s | node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, node->father == -1 ? "NIL" : auxFather, node->next == -1 ? "NIL" : auxNext, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+         free(state);
 
       }
 
    } else {
 
-      // { Non-root node, forward the request }
+      int messageContent = node->self;
 
-      int messageContent = requestingNode;
-
-      MPI_Send(&messageContent, 1, MPI_INT, node->father, TAG_REQUEST, MPI_COMM_WORLD);
+      MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_FAILED_NODE, MPI_COMM_WORLD); // Preciso enviar esta mensagem para garantir consistência do MPI.
 
    }
-
-   node->father = requestingNode;
 
 }
 
 void received_token_message(s_N *node) {
 
-   // { Receive the token from node Sj }
+   if (node->failed == false) {
 
-   //TO DO: cancel_timer goes here...
-   cancel_timer(timer);
+      // { Receive the token from node Sj }
 
-   if (node->xc != NULL) {
+      cancel_timer(timer);
+
+      if (node->xc->array != NULL) {
+
+         int messageContent = node->self;
+
+         int j = 0;
+
+         for (j = 0; j < node->xc->arrayLength; j++) {
+
+            int messageDestinataryNode = node->xc->array[j];
+
+            MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_PRESENT, MPI_COMM_WORLD);
+
+         }
+
+         node->xc->array = NULL;
+         node->xc->arrayLength = 0;
+
+      }
+
+      node->tokenPresent = true;
+
+      if (node->loggingEvents == true) {
+
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+         sprintf(node->logBuffer, "(Node %d): Recebi o TOKEN! Cancelei o meu timer. [node->tokenPresent = %s]\n", node->self, node->tokenPresent ? "true" : "false");
+
+         write_mpi_log_event(node->logFile, node->logBuffer);
+
+      }
+
+      if (node->printingEvents == true) {
+
+         printf("(Node %d): Recebi o TOKEN! Cancelei o meu timer.\n\n", node->self);
+
+      }
+
+   }
+
+}
+
+void received_consult_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      if (node->next == nodeSj) {
+
+         if (node->loggingEvents == true) {
+
+            memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+            sprintf(node->logBuffer, "(Node %d): O node %d desconfia que houve uma falha, mas ele é o meu NEXT! Respondendo a mensagem 'CONSULT' dele. [node->next = %d]\n\n", node->self, node->next, node->next);
+
+            write_mpi_log_event(node->logFile, node->logBuffer);
+
+         }
+
+         if (node->printingEvents == true) {
+
+            printf("(Node %d): O node %d desconfia que houve uma falha, mas ele é o meu NEXT! Respondendo a mensagem 'CONSULT' dele.\n\n", node->self, node->next);
+
+         }
+
+         int messageContent = node->self;
+
+         MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_QUIET, MPI_COMM_WORLD);
+
+      }
+
+   } else {
 
       int messageContent = node->self;
 
-      int j = 0;
+      MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_FAILED_NODE, MPI_COMM_WORLD); // Preciso enviar esta mensagem para garantir consistência do MPI.
 
-      for (j = 0; j < node->xc->arrayLength; j++) {
+   }
 
-         int messageDestinataryNode = node->xc->array[j];
+}
 
-         MPI_Send(&messageContent, 1, MPI_INT, messageDestinataryNode, TAG_PRESENT, MPI_COMM_WORLD);
+void received_quiet_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      if (node->myState == consulting) {
+
+         node->myState = waiting;
+
+         if (node->loggingEvents == true) {
+
+            memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+            char *state = stateToString(node);
+
+            sprintf(node->logBuffer, "(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Ativei o meu timer 'Twait'. [node->myState = %s]\n", node->self, state);
+
+            write_mpi_log_event(node->logFile, node->logBuffer);
+
+            free(state);
+
+         }
+
+         if (node->printingEvents == true) {
+
+            printf("(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Ativei o meu timer 'Twait'.\n\n", node->self, nodeSj);
+
+         }
+
+         timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
 
       }
+
+   }
+
+}
+
+void received_failure_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      int myState = node->myState;
+
+      switch (myState) {
+
+         case waiting:
+
+            if (node->tokenPresent == true) {
+
+               if (node->loggingEvents == true) {
+
+                  memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+                  char *state = stateToString(node);
+
+                  sprintf(node->logBuffer, "(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele. [node->tokenPresent = %s | node->myState = %s]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", state);
+
+                  write_mpi_log_event(node->logFile, node->logBuffer);
+
+                  free(state);
+
+               }
+
+               if (node->printingEvents == true) {
+
+                  printf("(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele.\n\n", node->self, nodeSj);
+
+               }
+
+               int messageContent = node->self;
+
+               MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_PRESENT, MPI_COMM_WORLD);
+
+            } else {
+
+               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+               node->xc->array[node->xc->arrayLength] = nodeSj;
+               node->xc->arrayLength++;
+
+            }
+
+            break;
+
+         case rest:
+
+            if (node->tokenPresent == true) {
+
+               if (node->loggingEvents == true) {
+
+                  memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+                  char *state = stateToString(node);
+
+                  sprintf(node->logBuffer, "(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele. [node->tokenPresent = %s | node->myState = %s]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", state);
+
+                  write_mpi_log_event(node->logFile, node->logBuffer);
+
+                  free(state);
+
+               }
+
+               if (node->printingEvents == true) {
+
+                  printf("(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele.\n\n", node->self, nodeSj);
+
+               }
+
+               int messageContent = node->self;
+
+               MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_PRESENT, MPI_COMM_WORLD);
+
+            } else {
+
+               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+               node->xc->array[node->xc->arrayLength] = nodeSj;
+               node->xc->arrayLength++;
+
+            }
+
+            break;
+
+         case active:
+
+            if (node->tokenPresent == true) {
+
+               if (node->loggingEvents == true) {
+
+                  memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+                  char *state = stateToString(node);
+
+                  sprintf(node->logBuffer, "(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele. [node->tokenPresent = %s | node->myState = %s]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", state);
+
+                  write_mpi_log_event(node->logFile, node->logBuffer);
+
+                  free(state);
+
+               }
+
+               if (node->printingEvents == true) {
+
+                  printf("(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele.\n\n", node->self, nodeSj);
+
+               }
+
+               int messageContent = node->self;
+
+               MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_PRESENT, MPI_COMM_WORLD);
+
+            } else {
+
+               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+               node->xc->array[node->xc->arrayLength] = nodeSj;
+               node->xc->arrayLength++;
+
+            }
+
+            break;
+
+         case consulting:
+
+            if (node->tokenPresent == true) {
+
+               if (node->loggingEvents == true) {
+
+                  memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+                  char *state = stateToString(node);
+
+                  sprintf(node->logBuffer, "(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele. [node->tokenPresent = %s | node->myState = %s]\n", node->self, nodeSj, node->tokenPresent ? "true" : "false", state);
+
+                  write_mpi_log_event(node->logFile, node->logBuffer);
+
+                  free(state);
+
+               }
+
+               if (node->printingEvents == true) {
+
+                  printf("(Node %d): O node %d está procurando o TOKEN, que está comigo! Respondendo a mensagem 'FAILURE' dele.\n\n", node->self, nodeSj);
+
+               }
+
+               int messageContent = node->self;
+
+               MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_PRESENT, MPI_COMM_WORLD);
+
+            } else {
+
+               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+               node->xc->array[node->xc->arrayLength] = nodeSj;
+               node->xc->arrayLength++;
+
+            }
+
+            break;
+
+         case observer:
+
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+            if (node->loggingEvents == true) {
+
+                memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): Estou observando a eleição. Ativei o meu timer 'Telec'. [node->tokenPresent = %s | node->myState = %s]\n", node->self, node->tokenPresent ? "true" : "false", state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): Estou observando a eleição. Ativei o meu timer 'Telec'.\n\n", node->self);
+
+            }
+
+            break;
+
+      }
+
+   } else {
+
+      int messageContent = node->self;
+
+      MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_FAILED_NODE, MPI_COMM_WORLD); // Preciso enviar esta mensagem para garantir consistência do MPI.
+
+   }
+
+}
+
+void received_election_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      int myState = node->myState;
+
+      switch (myState) {
+
+         case waiting:
+
+            node->myState = observer;
+
+            node->xc->array = NULL;
+            node->xc->arrayLength = 0;
+
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+
+            }
+
+            break;
+
+         case rest:
+
+            node->myState = observer;
+
+            node->xc->array = NULL;
+            node->xc->arrayLength = 0;
+
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+
+            }
+
+            break;
+
+         case consulting:
+
+            node->myState = observer;
+
+            node->xc->array = NULL;
+            node->xc->arrayLength = 0;
+
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+
+            }
+
+            break;
+
+         case query:
+
+            node->myState = observer;
+
+            node->xc->array = NULL;
+            node->xc->arrayLength = 0;
+
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+
+            }
+
+            break;
+
+         case candidate:
+
+            if (nodeSj < node->self) {
+
+               node->myState = observer;
+
+               timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+               if (node->loggingEvents == true) {
+
+                  memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+                  char *state = stateToString(node);
+
+                  sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN e é melhor candidato do que eu. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+
+                  write_mpi_log_event(node->logFile, node->logBuffer);
+
+                  free(state);
+
+               }
+
+               if (node->printingEvents == true) {
+
+                  printf("(Node %d): O node %d se candidatou para regenerar o TOKEN e é melhor candidato do que eu. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+
+               }
+
+            }
+
+            break;
+
+         case observer:
+
+            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+
+            if (node->loggingEvents == true) {
+
+               memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+               char *state = stateToString(node);
+
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+
+               write_mpi_log_event(node->logFile, node->logBuffer);
+
+               free(state);
+
+            }
+
+            if (node->printingEvents == true) {
+
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+
+            }
+
+            break;
+
+      }
+
+   }
+
+}
+
+void received_present_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      if (node->myState == query) {
+
+         cancel_timer(timer);
+
+         node->father = nodeSj;
+
+         node->next = NIL;
+
+         if (node->loggingEvents == true) {
+
+            memset(node->logBuffer, 0, sizeof(node->logBuffer));
+
+            char *state = stateToString(node);
+
+            sprintf(node->logBuffer, "(Node %d): Recebi a resposta da mensagem 'FAILURE' do node %d! O TOKEN está com ele! Solicitei-o e cancelei o meu timer 'Twait'. [node->father = %s | node->next = %s | node->myState = %s]\n", node->self, nodeSj, node->father == -1 ? "NIL" : node->father, node->next == -1 ? "NIL" : node->next, state);
+
+            write_mpi_log_event(node->logFile, node->logBuffer);
+
+            free(state);
+
+         }
+
+         if (node->printingEvents == true) {
+
+            printf("(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Ativei o meu timer 'Twait'.\n\n", node->self, nodeSj);
+
+         }
+
+         request_c_s(node);
+
+      }
+
+   }
+
+}
+
+void received_candidate_elected_message(s_N *node, int nodeSj) {
+
+   if (node->failed == false) {
+
+      cancel_timer(timer);
+
+      node->father = nodeSj;
 
       node->xc->array = NULL;
       node->xc->arrayLength = 0;
 
-   }
-
-   node->tokenPresent = true;
-
-   printf("(Node %d): Recebi o TOKEN!\n\n", node->self);
-
-}
-
-void received_consult_message(s_N *node, int requestingNode) {
-
-   if (node->next == requestingNode) {
-
-      printf("(Node %d): O node %d desconfia que houve uma falha, mas ele é o meu NEXT! Respondendo a mensagem CONSULT dele...\n\n", node->self, node->next);
-
-      int messageContent = node->self;
-
-      MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_QUIET, MPI_COMM_WORLD);
-
-   }
-
-}
-
-void received_quiet_message(s_N *node, int requestingNode) {
-
-   if (node->myState == consulting) {
-
-      printf("(Node %d): Recebi a resposta da mensagem CONSULT do node %d! Não houve falha no sistema!\n\n", node->self, requestingNode);
-
-      node->myState = waiting;
-
-      //TO DO: start_timer (TWAIT) goes here...
-      timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
-
-   }
-
-}
-
-void received_failure_message(s_N *node, int requestingNode) {
-
-   int myState = node->myState;
-
-   switch (myState) {
-
-      case waiting:
-
-         if (node->tokenPresent == true) {
-
-            int messageContent = node->self;
-
-            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
-
-         } else {
-
-            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-            node->xc->array[node->xc->arrayLength] = requestingNode;
-            node->xc->arrayLength++;
-
-         }
-
-         break;
-
-      case rest:
-
-         if (node->tokenPresent == true) {
-
-            int messageContent = node->self;
-
-            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
-
-         } else {
-
-            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-            node->xc->array[node->xc->arrayLength] = requestingNode;
-            node->xc->arrayLength++;
-
-         }
-
-         break;
-
-      case active:
-
-         if (node->tokenPresent == true) {
-
-            int messageContent = node->self;
-
-            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
-
-         } else {
-
-            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-            node->xc->array[node->xc->arrayLength] = requestingNode;
-            node->xc->arrayLength++;
-
-         }
-
-         break;
-
-      case consulting:
-
-         if (node->tokenPresent == true) {
-
-            int messageContent = node->self;
-
-            MPI_Send(&messageContent, 1, MPI_INT, requestingNode, TAG_PRESENT, MPI_COMM_WORLD);
-
-         } else {
-
-            node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-            node->xc->array[node->xc->arrayLength] = requestingNode;
-            node->xc->arrayLength++;
-
-         }
-
-         break;
-
-      case observer:
-
-         //TO DO: start_timer (TELEC) goes here...
-         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         break;
-
-   }
-
-}
-
-void received_election_message(s_N *node, int requestingNode) {
-
-   int myState = node->myState;
-
-   switch (myState) {
-
-      case waiting:
-
-         node->myState = observer;
-
-         node->xc->array = NULL;
-         node->xc->arrayLength = 0;
-
-         //TO DO: start_timer (TELEC) goes here...
-         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         break;
-
-      case rest:
-
-         node->myState = observer;
-
-         node->xc->array = NULL;
-         node->xc->arrayLength = 0;
-
-         //TO DO: start_timer (TELEC) goes here...
-         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         break;
-
-      case consulting:
-
-         node->myState = observer;
-
-         node->xc->array = NULL;
-         node->xc->arrayLength = 0;
-
-         //TO DO: start_timer (TELEC) goes here...
-         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         break;
-
-      case query:
-
-         node->myState = observer;
-
-         node->xc->array = NULL;
-         node->xc->arrayLength = 0;
-
-         //TO DO: start_timer (TELEC) goes here...
-         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         break;
-
-      case candidate:
-
-         if (requestingNode < node->self) {
-
-            node->myState = observer;
-
-            //TO DO: start_timer (TELEC) goes here...
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         }
-
-         break;
-
-      case observer:
-
-         //TO DO: start_timer (TELEC) goes here...
-         timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
-
-         break;
-
-   }
-
-}
-
-void received_present_message(s_N *node, int requestingNode) {
-
-   if (node->myState == query) {
-
-      //TO DO: cancel_timer goes here...
-      cancel_timer(timer);
-
-      node->father = requestingNode;
-
       node->next = NIL;
 
-      request_c_s(node);
+      if (node->loggingEvents == true) {
 
-   }
+         memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-}
+         char *state = stateToString(node);
 
-void received_candidate_elected_message(s_N *node, int requestingNode) {
+         sprintf(node->logBuffer, "(Node %d): O node %d foi eleito! Cancelei o meu timer 'Telec'. [node->father = %s | node->next = %s | node->myState = %s]\n", node->self, nodeSj, node->father == -1 ? "NIL" : node->father, node->next == -1 ? "NIL" : node->next, state);
 
-   //TO DO: cancel_timer goes here...
-   cancel_timer(timer);
+         write_mpi_log_event(node->logFile, node->logBuffer);
 
-   node->father = requestingNode;
+         free(state);
 
-   node->xc->array = NULL;
-   node->xc->arrayLength = 0;
+      }
 
-   node->next = NIL;
+      if (node->printingEvents == true) {
 
-   if (node->requestingCS == true) {
+         printf("(Node %d): O node %d foi eleito! Cancelei o meu timer 'Twait'.\n\n", node->self, nodeSj);
 
-      request_c_s(node);
+      }
 
-   } else {
+      if (node->requestingCS == true) {
 
-      node->myState = rest;
+         request_c_s(node);
+
+      } else {
+
+         node->myState = rest;
+
+      }
 
    }
 

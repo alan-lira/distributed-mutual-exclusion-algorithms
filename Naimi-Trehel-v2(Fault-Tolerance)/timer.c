@@ -24,8 +24,6 @@ size_t start_timer(size_t timer_id, unsigned int timerInterval, timeOutHandler h
 
    s_N *node = (s_N*) userData;
 
-   printf("(Node %d): ATIVEI MEU TIMER (T = %d SEGUNDOS).\n", node->self, timerInterval);
-
    struct timer_node *tmp = NULL;
 
    struct timer_node *timerNode = (struct timer_node*) timer_id;
@@ -53,7 +51,11 @@ size_t start_timer(size_t timer_id, unsigned int timerInterval, timeOutHandler h
 
       if (new_node->fd == -1) {
 
-         free(new_node);
+         if (new_node) {
+
+            free(new_node);
+
+         }
 
          return 0;
 
@@ -98,7 +100,11 @@ size_t start_timer(size_t timer_id, unsigned int timerInterval, timeOutHandler h
 
       if (timerNode->fd == -1) {
 
-         free(timerNode);
+         if (timerNode) {
+
+            free(timerNode);
+
+         }
 
          return 0;
 

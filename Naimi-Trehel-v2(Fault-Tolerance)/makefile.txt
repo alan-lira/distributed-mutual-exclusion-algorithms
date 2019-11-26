@@ -3,7 +3,7 @@
 # DESCRIPTION:
 #   Makefile for all MPI C Language codes
 # AUTHOR: Alan Lira Nunes
-# LAST REVISED:  10/06/2019 A.D.
+# LAST REVISED:  11/21/2019 A.D.
 ###############################################################################
 
 #Compiler
@@ -20,14 +20,10 @@ FLAGS   =   -O2 -w -pthread
 
 all: naimi-trehel
 
-naimi-trehel:  naimi-trehel.c node.c mpi-message-processing-thread-parameters.c timer.c
-	$(CC) $(FLAGS) naimi-trehel.c -o naimi-trehel node.c mpi-message-processing-thread-parameters.c timer.c
+naimi-trehel:  naimi-trehel.c node.c mpi-message-processing-thread-parameters.c log.c timer.c
+	$(CC) $(FLAGS) naimi-trehel.c -o naimi-trehel node.c mpi-message-processing-thread-parameters.c log.c timer.c
 
 clean:  
 	/bin/rm -rf     \
 	naimi-trehel    \
         *.o
-
-
-
-
