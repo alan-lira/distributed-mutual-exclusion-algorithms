@@ -4,7 +4,7 @@
 #define C_S_PASSAGE_DELAY 2 // Tempo fixo (2 segundos) de acesso à CRITICAL SECTION para todos os nodes.
 #define MPI_LOG_FILE_NAME "mpi_log_file.txt" // Arquivo para gerar log de eventos dos nodes.
 #define TWAIT C_S_PASSAGE_DELAY // Estimativa (em segundos) de atraso máximo para a presunção de falha.
-#define TELEC 1 // Estimativa (em segundos) de atraso máximo para a realização de broadcasting (envio de uma pergunta e recebimento de respostas).
+#define TELEC 2 // Estimativa (em segundos) de atraso máximo para a realização de broadcasting (envio de uma pergunta e recebimento de respostas).
 
 /* MPI MESSAGE TAGS */
 #define TAG_IDLE 0 // Este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.

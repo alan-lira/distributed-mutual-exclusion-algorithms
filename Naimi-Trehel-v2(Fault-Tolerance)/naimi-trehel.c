@@ -33,8 +33,6 @@ void testeUm(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequesti
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
 
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
-
       simulaRequest(node); // Simulando um request deste node.
 
    }
@@ -70,8 +68,6 @@ void testeDois(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
    arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -114,8 +110,6 @@ void testeTres(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
 
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
-
       simulaRequest(node); // Simulando um request deste node.
 
    }
@@ -149,8 +143,6 @@ void testeQuatro(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequ
    arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -189,8 +181,6 @@ void testeCinco(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReque
    arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -235,8 +225,6 @@ void testeSeis(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
 
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
-
       simulaRequest(node); // Simulando um request deste node.
 
    }
@@ -271,8 +259,6 @@ void testeSete(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
    arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -312,8 +298,6 @@ void testeOito(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
    arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -359,8 +343,6 @@ void testeNove(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
 
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
-
       simulaRequest(node); // Simulando um request deste node.
 
    }
@@ -396,8 +378,6 @@ void testeDez(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequest
    arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -438,8 +418,6 @@ void testeOnze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
    arrayRequestingNodes[7] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
-
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
 
       simulaRequest(node); // Simulando um request deste node.
 
@@ -486,9 +464,365 @@ void testeDoze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayReques
 
    if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
 
-      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
-
       simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeTreze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 13: 10 nodes; Sem falha de nodes; Média carga de requisições x 5 (5 nodes desejam acessar a CRITICAL SECTION cinco vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 5; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeCatorze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 14: 10 nodes; Sem falha de nodes; Alta carga de requisições x 10 (10 nodes desejam acessar a CRITICAL SECTION dez vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 10; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeQuinze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 15: 10 nodes; 1 node falho; Média carga de requisições x 5 (5 nodes desejam acessar a CRITICAL SECTION cinco vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 5; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeDezesseis(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 16: 10 nodes; 1 node falho; Alta carga de requisições x 10 (10 nodes desejam acessar a CRITICAL SECTION dez vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 10; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeDezessete(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 17: 10 nodes; 2 nodes falhos; Média carga de requisições x 5 (5 nodes desejam acessar a CRITICAL SECTION cinco vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 5; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeDezoito(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 18: 10 nodes; 2 nodes falhos; Alta carga de requisições x 10 (10 nodes desejam acessar a CRITICAL SECTION dez vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 10; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeDezenove(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 19: 10 nodes; 3 nodes falhos; Média carga de requisições x 5 (5 nodes desejam acessar a CRITICAL SECTION cinco vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+   arrayFailedNodes[2] = 1; // Node 2 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 5; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
+
+   }
+
+}
+
+void testeVinte(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 20: 10 nodes; 3 nodes falhos; Alta carga de requisições x 10 (10 nodes desejam acessar a CRITICAL SECTION dez vezes cada).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+   arrayFailedNodes[2] = 1; // Node 2 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      for (int i = 0; i < 10; i++) {
+
+         simulaRequest(node); // Simulando um request deste node.
+
+      }
 
    }
 
@@ -498,6 +832,9 @@ void simulaRequest(s_N *node) {
 
    // Este node está requisitando o acesso à CRITICAL SECTION.
    request_c_s(node);
+
+   // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+   node->requestedTokenTime = MPI_Wtime();
 
    // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
    int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);
@@ -561,19 +898,20 @@ void jobMPIMessageProcessing(const void *parameters) {
 
 	    sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
 
-            node->receivedTokenTime = MPI_Wtime(); // Fim do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+            // Fim do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+            node->receivedTokenTime = MPI_Wtime();
 
             if (node->loggingEvents == true) {
 
                memset(node->logBuffer, 0, sizeof(node->logBuffer));
 
-               sprintf(node->logBuffer, "(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
+               sprintf(node->logBuffer, "(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n", node->self, node->receivedTokenTime - node->requestedTokenTime);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
             }
 
-            printf("(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n\n", node->self, node->self == ELECTED_NODE ? 0 : (node->receivedTokenTime - node->requestedTokenTime));
+            printf("(Node %d): Esperei %f segundo(s) para receber o TOKEN!\n\n", node->self, node->receivedTokenTime - node->requestedTokenTime);
 
             break;
 
@@ -743,7 +1081,13 @@ int main(int argc, char *argv[]) {
    //testeNove(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
    //testeDez(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
    //testeOnze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
-   testeDoze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeDoze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeTreze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeCatorze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeQuinze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeDezoito(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeDezenove(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeVinte(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
 
    // Desalocando o array de failed nodes.
    free(arrayFailedNodes);
