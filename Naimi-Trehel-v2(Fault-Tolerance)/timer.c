@@ -22,13 +22,9 @@ void initialize_timer_thread() {
 
 size_t start_timer(size_t timer_id, unsigned int timerInterval, timeOutHandler handler, s_TT type, void *userData) {
 
-   s_N *node = (s_N*) userData;
-
-   struct timer_node *tmp = NULL;
-
    struct timer_node *timerNode = (struct timer_node*) timer_id;
 
-   if (timerNode == NULL) {
+   if (timerNode == NULL) { // First use of this timer (create it).
 
       struct timer_node *new_node = NULL;
 
@@ -61,35 +57,44 @@ size_t start_timer(size_t timer_id, unsigned int timerInterval, timeOutHandler h
 
       }
 
-      new_value.it_value.tv_sec = timerInterval;
-      new_value.it_value.tv_nsec = timerInterval * 1000000;
-
       if (type == periodic) {
+
+         new_value.it_value.tv_sec = 0;
+
+         new_value.it_value.tv_nsec = 0;
+
+         new_value.it_interval.tv_sec = timerInterval;
 
          new_value.it_interval.tv_nsec = timerInterval * 1000000;
 
       } else {
 
+         new_value.it_value.tv_sec = timerInterval;
+
+         new_value.it_value.tv_nsec = timerInterval * 1000000;
+
+         new_value.it_interval.tv_sec = 0;
+
          new_value.it_interval.tv_nsec = 0;
 
       }
 
-      new_value.it_interval.tv_sec = 0;
-
       timerfd_settime(new_node->fd, 0, &new_value, NULL);
 
-      // Inserting the timer node into the list.
+      // Adding this timer node into the general timer nodes' list (g_head).
       new_node->next = g_head;
 
       g_head = new_node;
 
+      free(timerNode);
+
       return (size_t) new_node;
 
-   } else {
+   } else { // This time already exists (overwrite it's timeout value).
 
-      // Já existe uma instância deste timer em andamento. Reiniciando o contador...
-      // printf("EXISTS\n");
-      // cancel_timer(timerNode);
+      close(timerNode->fd);
+
+      struct itimerspec new_value;
 
       timerNode->callbackTimeOutHandler = handler;
       timerNode->userData = userData;
@@ -110,22 +115,27 @@ size_t start_timer(size_t timer_id, unsigned int timerInterval, timeOutHandler h
 
       }
 
-      struct itimerspec new_value;
-
-      new_value.it_value.tv_sec = timerInterval;
-      new_value.it_value.tv_nsec = timerInterval * 1000000;
-
       if (type == periodic) {
+
+         new_value.it_value.tv_sec = 0;
+
+         new_value.it_value.tv_nsec = 0;
+
+         new_value.it_interval.tv_sec = timerInterval;
 
          new_value.it_interval.tv_nsec = timerInterval * 1000000;
 
       } else {
 
+         new_value.it_value.tv_sec = timerInterval;
+
+         new_value.it_value.tv_nsec = timerInterval * 1000000;
+
+         new_value.it_interval.tv_sec = 0;
+
          new_value.it_interval.tv_nsec = 0;
 
       }
-
-      new_value.it_interval.tv_sec = 0;
 
       timerfd_settime(timerNode->fd, 0, &new_value, NULL);
 
@@ -231,8 +241,6 @@ struct timer_node *get_timer_from_fd(int fd) {
 
 void cancel_timer(size_t timer_id) {
 
-   struct timer_node *tmp = NULL;
-
    struct timer_node *node = (struct timer_node*) timer_id;
 
    if (node == NULL) {
@@ -241,36 +249,37 @@ void cancel_timer(size_t timer_id) {
 
    }
 
-   close(node->fd);
+   struct timer_node *previous = NULL;
 
-   if (node == g_head) {
+   struct timer_node *temp = g_head;
 
-      g_head = g_head->next;
+   while (temp != NULL && temp->fd != node->fd) {
+
+      previous = temp;
+
+      temp = temp->next;
+
+   }
+
+   if (temp == NULL) {
+
+      return;
+
+   }
+
+   if (previous == NULL) {
+
+      g_head = temp->next;
 
    } else {
 
-      tmp = g_head;
-
-      while (tmp && tmp->next != node) {
-
-         tmp = tmp->next;
-
-      }
-
-      if (tmp) {
-
-         // tmp->next can not be NULL here.
-         tmp->next = tmp->next->next;
-
-      }
+      previous->next = temp->next;
 
    }
 
-   if (node) {
+   close(temp->fd);
 
-      free(node);
-
-   }
+   free(temp);
 
 }
 

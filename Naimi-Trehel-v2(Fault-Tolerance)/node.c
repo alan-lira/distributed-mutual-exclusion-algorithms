@@ -845,12 +845,6 @@ void received_request_message(s_N *node, int nodeSj) {
 
       }
 
-   } else {
-
-      int messageContent = node->self;
-
-      MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_FAILED_NODE, MPI_COMM_WORLD); // Preciso enviar esta mensagem para garantir consistência do MPI.
-
    }
 
 }
@@ -931,12 +925,6 @@ void received_consult_message(s_N *node, int nodeSj) {
          MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_QUIET, MPI_COMM_WORLD);
 
       }
-
-   } else {
-
-      int messageContent = node->self;
-
-      MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_FAILED_NODE, MPI_COMM_WORLD); // Preciso enviar esta mensagem para garantir consistência do MPI.
 
    }
 
@@ -1165,12 +1153,6 @@ void received_failure_message(s_N *node, int nodeSj) {
             break;
 
       }
-
-   } else {
-
-      int messageContent = node->self;
-
-      MPI_Send(&messageContent, 1, MPI_INT, nodeSj, TAG_FAILED_NODE, MPI_COMM_WORLD); // Preciso enviar esta mensagem para garantir consistência do MPI.
 
    }
 

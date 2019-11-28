@@ -7,6 +7,513 @@
 
 sem_t g_TokenSemaphore; // Unnamed semaphore (thread-shared semaphore) 'g_TokenSemaphore'.
 
+void testeUm(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 1: 10 nodes; Sem falha de nodes; Baixa carga de requisições (1 node deseja acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeDois(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 2: 10 nodes; Sem falha de nodes; Média carga de requisições (5 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeTres(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 3: 10 nodes; Sem falha de nodes; Alta carga de requisições (10 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeQuatro(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 4: 10 nodes; 1 node falho; Baixa carga de requisições (1 node deseja acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeCinco(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 5: 10 nodes; 1 node falho; Média carga de requisições (5 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeSeis(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 6: 10 nodes; 1 node falho; Alta carga de requisições (10 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeSete(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 7: 10 nodes; 2 nodes falhos; Baixa carga de requisições (1 node deseja acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeOito(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 8: 10 nodes; 2 nodes falhos; Média carga de requisições (5 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeNove(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 9: 10 nodes; 2 nodes falhos; Alta carga de requisições (10 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeDez(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 10: 10 nodes; 3 nodes falhos; Baixa carga de requisições (1 node deseja acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+   arrayFailedNodes[2] = 1; // Node 2 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeOnze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 11: 10 nodes; 3 nodes falhos; Média carga de requisições (5 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+   arrayFailedNodes[2] = 1; // Node 2 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[3] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void testeDoze(s_N *node, int nodeCount, int *arrayFailedNodes, int *arrayRequestingNodes) {
+
+   // Teste 12: 10 nodes; 3 nodes falhos; Alta carga de requisições (10 nodes desejam acessar a CRITICAL SECTION).
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
+
+   }
+
+   arrayFailedNodes[0] = 1; // Node 0 falhou.
+   arrayFailedNodes[1] = 1; // Node 1 falhou.
+   arrayFailedNodes[2] = 1; // Node 2 falhou.
+
+   if (arrayFailedNodes[node->self] == 1) {
+
+      node->failed = true; // Definindo nodes falhos.
+
+   }
+
+   for (int i = 0; i < nodeCount; i++) {
+
+      arrayRequestingNodes[i] = 0; // Default: Nenhum node deseja acessar a CRITICAL SECTION.
+
+   }
+
+   arrayRequestingNodes[0] = 1; // Node 0 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[1] = 1; // Node 1 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[2] = 1; // Node 2 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[3] = 1; // Node 3 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[4] = 1; // Node 4 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[5] = 1; // Node 5 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[6] = 1; // Node 6 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[7] = 1; // Node 7 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[8] = 1; // Node 8 deseja acessar a CRITICAL SECTION.
+   arrayRequestingNodes[9] = 1; // Node 9 deseja acessar a CRITICAL SECTION.
+
+   if (arrayRequestingNodes[node->self] == 1 && node->failed == false) {
+
+      node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
+
+      simulaRequest(node); // Simulando um request deste node.
+
+   }
+
+}
+
+void simulaRequest(s_N *node) {
+
+   // Este node está requisitando o acesso à CRITICAL SECTION.
+   request_c_s(node);
+
+   // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
+   int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);
+
+   if (semaphoreLockedConfirmed == 0) {
+
+      // Este node está simulando o acesso à CRITICAL SECTION.
+      perform_c_s(node);
+
+      // Este node está liberando o acesso à CRITICAL SECTION.
+      release_c_s(node);
+
+   }
+
+}
+
 // Job de processamento de mensagens MPI.
 void jobMPIMessageProcessing(const void *parameters) {
 
@@ -118,11 +625,6 @@ void jobMPIMessageProcessing(const void *parameters) {
 
             break;
 
-         case TAG_FAILED_NODE: // Recebimento de uma mensagem enviada por um node Sj que falhou.
-                               //(O envio desta mensagem é necessário para garantir a consistência entre mensagens MPI).
-
-            break;
-
       }
 
    }
@@ -224,48 +726,30 @@ int main(int argc, char *argv[]) {
    // Criando a thread 'mpiMessageProcessingThread', passando o job (função callback) 'jobMPIMessageProcessing' e os parâmetros 'mpiMessageProcessingThreadParameters'.
    pthread_create(&mpiMessageProcessingThread, NULL, (const void *) jobMPIMessageProcessing, mpiMessageProcessingThreadParameters);
 
-   // Testando falhas de nodes.
+   // Testando aplicabilidade do algoritmo Naimi-Trehel.
 
    int *arrayFailedNodes = (int *) malloc(sizeof(int) * nodeCount);
 
-   for (int i = 0; i < nodeCount; i++) {
+   int *arrayRequestingNodes = (int *) malloc(sizeof(int) * nodeCount);
 
-      arrayFailedNodes[i] = 0; // Default: todos os nodes estão ativos.
-
-   }
-
-   // Settando nodes falhos.
-
-   arrayFailedNodes[0] = 1; // Node 0 falhou.
-
-   if (arrayFailedNodes[node->self] == 1) {
-
-      node->failed = true;
-
-   }
+   //testeUm(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeDois(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeTres(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeQuatro(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeCinco(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeSeis(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeSete(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeOito(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeNove(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeDez(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   //testeOnze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
+   testeDoze(node, nodeCount, arrayFailedNodes, arrayRequestingNodes);
 
    // Desalocando o array de failed nodes.
    free(arrayFailedNodes);
 
-   // Este node está requisitando o acesso à CRITICAL SECTION.
-   request_c_s(node);
-
-   node->requestedTokenTime = MPI_Wtime(); // Início do wall-clock que contabiliza o tempo de espera para este node receber o TOKEN.
-
-   // Tentando bloquear (Locking) o 'g_TokenSemaphore' (Obs: semaphoreLockedConfirmed == 0 significa sucesso na operação de bloqueio).
-   int semaphoreLockedConfirmed = sem_wait(&g_TokenSemaphore);
-
-   if (semaphoreLockedConfirmed == 0) {
-
-      // Este node está simulando o acesso à CRITICAL SECTION.
-      perform_c_s(node);
-
-      // Este node está liberando o acesso à CRITICAL SECTION.
-      release_c_s(node);
-
-   }
-
-   sem_post(&g_TokenSemaphore); // tokenSemaphore UNLOCK.
+   // Desalocando o array de requesting nodes.
+   free(arrayRequestingNodes);
 
    // Disparando em broadcast para a thread 'mpiMessageProcessingThread'
    // que este node não vai mais solicitar acesso à CRITICAL SECTION e deseja finalizar a sua execução.
