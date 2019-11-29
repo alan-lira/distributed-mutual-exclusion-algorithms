@@ -239,6 +239,20 @@ struct timer_node *get_timer_from_fd(int fd) {
 
 }
 
+void stop_timer(size_t timer_id) {
+
+   struct timer_node *node = (struct timer_node*) timer_id;
+
+   if (node == NULL) {
+
+      return;
+
+   }
+
+   close(node->fd);
+
+}
+
 void cancel_timer(size_t timer_id) {
 
    struct timer_node *node = (struct timer_node*) timer_id;

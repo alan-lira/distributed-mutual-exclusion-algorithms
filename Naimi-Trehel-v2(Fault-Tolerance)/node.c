@@ -238,7 +238,7 @@ char *setToString(s_IA *set) {
 
 void finalize_node(s_N *node, int nodeCount) {
 
-   cancel_timer(timer); // Pode acontecer de haver algum timer ativo neste node durante a finalização, cancelando por garantia...
+   stop_timer(timer); // Pode acontecer de haver algum timer ativo neste node durante a finalização, cancelando por garantia...
 
    for (int nodeRank = 0; nodeRank < nodeCount; nodeRank++) {
 
@@ -855,7 +855,7 @@ void received_token_message(s_N *node) {
 
       // { Receive the token from node Sj }
 
-      cancel_timer(timer);
+      stop_timer(timer);
 
       if (node->xc->array != NULL) {
 
@@ -1360,7 +1360,7 @@ void received_present_message(s_N *node, int nodeSj) {
 
       if (node->myState == query) {
 
-         cancel_timer(timer);
+         stop_timer(timer);
 
          node->father = nodeSj;
 
@@ -1398,7 +1398,7 @@ void received_candidate_elected_message(s_N *node, int nodeSj) {
 
    if (node->failed == false) {
 
-      cancel_timer(timer);
+      stop_timer(timer);
 
       node->father = nodeSj;
 
