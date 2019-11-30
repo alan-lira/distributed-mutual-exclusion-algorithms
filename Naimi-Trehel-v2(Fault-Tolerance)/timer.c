@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
 #include <string.h>
@@ -239,6 +241,12 @@ struct timer_node *get_timer_from_fd(int fd) {
 
 }
 
+int file_descriptor_open(int fd) {
+
+   return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+
+}
+
 void stop_timer(size_t timer_id) {
 
    struct timer_node *node = (struct timer_node*) timer_id;
@@ -249,7 +257,11 @@ void stop_timer(size_t timer_id) {
 
    }
 
-   close(node->fd);
+   if (file_descriptor_open(node->fd)) {
+
+      close(node->fd);
+
+   }
 
 }
 

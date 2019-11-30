@@ -27,6 +27,8 @@ static void *jobTimer();
 
 struct timer_node *get_timer_from_fd(int fd);
 
+int file_descriptor_open(int fd);
+
 void stop_timer(size_t timerId);
 
 void cancel_timer(size_t timerId);
