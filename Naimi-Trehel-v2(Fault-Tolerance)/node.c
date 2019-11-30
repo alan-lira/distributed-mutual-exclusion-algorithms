@@ -80,6 +80,22 @@ s_IA *load_xc_set_node() {
 
 }
 
+bool isContainedInSet(s_IA *set, int element) {
+
+   for (int i = 0; i < set->arrayLength; i++) {
+
+      if (set->array[i] == element) {
+
+         return true;
+
+      }
+
+   }
+
+   return false;
+
+}
+
 char *stateToString(s_N *node) {
 
    char *stateToString = malloc(sizeof(char) * 20);
@@ -1042,9 +1058,13 @@ void received_failure_message(s_N *node, int nodeSj) {
 
             } else {
 
-               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-               node->xc->array[node->xc->arrayLength] = nodeSj;
-               node->xc->arrayLength++;
+               if (isContainedInSet(node->xc, nodeSj) == false) {
+
+                  node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+                  node->xc->array[node->xc->arrayLength] = nodeSj;
+                  node->xc->arrayLength++;
+
+               }
 
             }
 
@@ -1080,9 +1100,13 @@ void received_failure_message(s_N *node, int nodeSj) {
 
             } else {
 
-               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-               node->xc->array[node->xc->arrayLength] = nodeSj;
-               node->xc->arrayLength++;
+               if (isContainedInSet(node->xc, nodeSj) == false) {
+
+                  node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+                  node->xc->array[node->xc->arrayLength] = nodeSj;
+                  node->xc->arrayLength++;
+
+               }
 
             }
 
@@ -1118,9 +1142,13 @@ void received_failure_message(s_N *node, int nodeSj) {
 
             } else {
 
-               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-               node->xc->array[node->xc->arrayLength] = nodeSj;
-               node->xc->arrayLength++;
+               if (isContainedInSet(node->xc, nodeSj) == false) {
+
+                  node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+                  node->xc->array[node->xc->arrayLength] = nodeSj;
+                  node->xc->arrayLength++;
+
+               }
 
             }
 
@@ -1156,9 +1184,13 @@ void received_failure_message(s_N *node, int nodeSj) {
 
             } else {
 
-               node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
-               node->xc->array[node->xc->arrayLength] = nodeSj;
-               node->xc->arrayLength++;
+               if (isContainedInSet(node->xc, nodeSj) == false) {
+
+                  node->xc->array = realloc(node->xc->array, sizeof(int) * (node->xc->arrayLength + 1));
+                  node->xc->array[node->xc->arrayLength] = nodeSj;
+                  node->xc->arrayLength++;
+
+               }
 
             }
 

@@ -46,6 +46,8 @@ s_IA *load_x_set_node(int nodeRank, int nodeCount);
 
 s_IA *load_xc_set_node();
 
+bool isContainedInSet(s_IA *set, int element);
+
 char *stateToString(s_N *node);
 
 char *tagToString(int TAG_MPI_MESSAGE);
