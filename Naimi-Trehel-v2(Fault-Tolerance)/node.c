@@ -4,7 +4,7 @@
 #include "constants.h"
 #include "timer.h"
 
-size_t timer;
+size_t timerTwait = NULL, timerTelec = NULL;
 
 s_N *initialize_node(void) {
    return NULL;
@@ -238,7 +238,19 @@ char *setToString(s_IA *set) {
 
 void finalize_node(s_N *node, int nodeCount) {
 
-   stop_timer(timer); // Pode acontecer de haver algum timer ativo neste node durante a finalização, cancelando por garantia...
+   // Pode acontecer de haver algum timer ativo neste node durante a finalização, cancelando por garantia...
+
+   if (timerTelec) {
+
+      stop_timer(timerTelec);
+
+   }
+
+   if (timerTwait) {
+
+      stop_timer(timerTwait);
+
+   }
 
    for (int nodeRank = 0; nodeRank < nodeCount; nodeRank++) {
 
@@ -316,7 +328,15 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
          char *state = stateToString(node);
 
-         sprintf(node->logBuffer, "(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Ativei o meu timer 'Telec'. [node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, tag, set, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+         if (timerTelec == NULL) {
+
+            sprintf(node->logBuffer, "(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Ativei o meu timer 'Telec'. [node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, tag, set, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         } else {
+
+            sprintf(node->logBuffer, "(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Reiniciei o meu timer 'Telec'. [node->requestingCS = %s | node->tokenPresent = %s | node->myState = %s]\n", node->self, tag, set, node->requestingCS ? "true" : "false", node->tokenPresent ? "true" : "false", state);
+
+         }
 
          write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -334,7 +354,15 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
          char *set = setToString(node->x);
 
-         printf("(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Ativei o meu timer 'Telec'.\n\n", node->self, tag, set);
+         if (timerTelec == NULL) {
+
+            printf("(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Ativei o meu timer 'Telec'.\n\n", node->self, tag, set);
+
+         } else {
+
+            printf("(Node %d): Enviei a mensagem %s em broadcast para o(s) node(s) do conjunto x = %s. Reiniciei o meu timer 'Telec'.\n\n", node->self, tag, set);
+
+         }
 
          free(tag);
 
@@ -342,7 +370,7 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
       }
 
-      timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+      timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
    }
 
@@ -643,7 +671,7 @@ void request_c_s(s_N *node) {
 
          node->father = NIL;
 
-         timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
+         timerTwait = start_timer(timerTwait, TWAIT, received_timeout_signal, singleShot, node);
 
       }
 
@@ -855,7 +883,17 @@ void received_token_message(s_N *node) {
 
       // { Receive the token from node Sj }
 
-      stop_timer(timer);
+      if (timerTelec) {
+
+         stop_timer(timerTelec);
+
+      }
+
+      if (timerTwait) {
+
+         stop_timer(timerTwait);
+
+      }
 
       if (node->xc->array != NULL) {
 
@@ -944,7 +982,7 @@ void received_quiet_message(s_N *node, int nodeSj) {
 
             char *state = stateToString(node);
 
-            sprintf(node->logBuffer, "(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Ativei o meu timer 'Twait'. [node->myState = %s]\n", node->self, state);
+            sprintf(node->logBuffer, "(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Reiniciei o meu timer 'Twait'. [node->myState = %s]\n", node->self, state);
 
             write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -954,11 +992,11 @@ void received_quiet_message(s_N *node, int nodeSj) {
 
          if (node->printingEvents == true) {
 
-            printf("(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Ativei o meu timer 'Twait'.\n\n", node->self, nodeSj);
+            printf("(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Reiniciei o meu timer 'Twait'.\n\n", node->self, nodeSj);
 
          }
 
-         timer = start_timer(timer, TWAIT, received_timeout_signal, singleShot, node);
+         timerTwait = start_timer(timerTwait, TWAIT, received_timeout_signal, singleShot, node);
 
       }
 
@@ -1128,7 +1166,7 @@ void received_failure_message(s_N *node, int nodeSj) {
 
          case observer:
 
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1136,7 +1174,7 @@ void received_failure_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): Estou observando a eleição. Ativei o meu timer 'Telec'. [node->tokenPresent = %s | node->myState = %s]\n", node->self, node->tokenPresent ? "true" : "false", state);
+               sprintf(node->logBuffer, "(Node %d): Estou observando a eleição. Reiniciei o meu timer 'Telec'. [node->tokenPresent = %s | node->myState = %s]\n", node->self, node->tokenPresent ? "true" : "false", state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1146,7 +1184,7 @@ void received_failure_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): Estou observando a eleição. Ativei o meu timer 'Telec'.\n\n", node->self);
+               printf("(Node %d): Estou observando a eleição. Reiniciei o meu timer 'Telec'.\n\n", node->self);
 
             }
 
@@ -1173,7 +1211,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1181,7 +1219,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1191,7 +1229,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
             }
 
@@ -1204,7 +1242,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1212,7 +1250,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1222,7 +1260,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
             }
 
@@ -1235,7 +1273,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1243,7 +1281,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1253,7 +1291,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
             }
 
@@ -1266,7 +1304,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1274,7 +1312,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1284,7 +1322,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
             }
 
@@ -1296,7 +1334,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                node->myState = observer;
 
-               timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+               timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
                if (node->loggingEvents == true) {
 
@@ -1304,7 +1342,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                   char *state = stateToString(node);
 
-                  sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN e é melhor candidato do que eu. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+                  sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN e é melhor candidato do que eu. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                   write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1314,7 +1352,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                if (node->printingEvents == true) {
 
-                  printf("(Node %d): O node %d se candidatou para regenerar o TOKEN e é melhor candidato do que eu. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+                  printf("(Node %d): O node %d se candidatou para regenerar o TOKEN e é melhor candidato do que eu. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
                }
 
@@ -1324,7 +1362,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
          case observer:
 
-            timer = start_timer(timer, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1332,7 +1370,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1342,7 +1380,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Ativei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
             }
 
@@ -1360,7 +1398,7 @@ void received_present_message(s_N *node, int nodeSj) {
 
       if (node->myState == query) {
 
-         stop_timer(timer);
+         stop_timer(timerTelec);
 
          node->father = nodeSj;
 
@@ -1372,7 +1410,7 @@ void received_present_message(s_N *node, int nodeSj) {
 
             char *state = stateToString(node);
 
-            sprintf(node->logBuffer, "(Node %d): Recebi a resposta da mensagem 'FAILURE' do node %d! O TOKEN está com ele! Solicitei-o e cancelei o meu timer 'Twait'. [node->father = %s | node->next = %s | node->myState = %s]\n", node->self, nodeSj, node->father == -1 ? "NIL" : node->father, node->next == -1 ? "NIL" : node->next, state);
+            sprintf(node->logBuffer, "(Node %d): Recebi a resposta da mensagem 'FAILURE' do node %d! O TOKEN está com ele! Solicitei-o e cancelei o meu timer 'Telec'. [node->father = %s | node->next = %s | node->myState = %s]\n", node->self, nodeSj, node->father == -1 ? "NIL" : node->father, node->next == -1 ? "NIL" : node->next, state);
 
             write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1382,7 +1420,7 @@ void received_present_message(s_N *node, int nodeSj) {
 
          if (node->printingEvents == true) {
 
-            printf("(Node %d): Recebi a resposta da mensagem 'CONSULT' do node %d! Não houve falha no sistema! Ativei o meu timer 'Twait'.\n\n", node->self, nodeSj);
+            printf("(Node %d): Recebi a resposta da mensagem 'FAILURE' do node %d! O TOKEN está com ele! Solicitei-o e cancelei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
          }
 
@@ -1398,7 +1436,7 @@ void received_candidate_elected_message(s_N *node, int nodeSj) {
 
    if (node->failed == false) {
 
-      stop_timer(timer);
+      stop_timer(timerTelec);
 
       node->father = nodeSj;
 
@@ -1423,7 +1461,7 @@ void received_candidate_elected_message(s_N *node, int nodeSj) {
 
       if (node->printingEvents == true) {
 
-         printf("(Node %d): O node %d foi eleito! Cancelei o meu timer 'Twait'.\n\n", node->self, nodeSj);
+         printf("(Node %d): O node %d foi eleito! Cancelei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
       }
 
