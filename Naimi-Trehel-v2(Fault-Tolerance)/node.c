@@ -256,17 +256,13 @@ void finalize_node(s_N *node, int nodeCount) {
 
    // Pode acontecer de haver algum timer ativo neste node durante a finalização, cancelando por garantia...
 
-   if (timerTelec) {
+   struct timer_node *auxTimerTelec = (struct timer_node*) timerTelec;
 
-      stop_timer(timerTelec);
+   stop_timer(auxTimerTelec);
 
-   }
+   struct timer_node *auxTimerTwait = (struct timer_node*) timerTwait;
 
-   if (timerTwait) {
-
-      stop_timer(timerTwait);
-
-   }
+   stop_timer(auxTimerTwait);
 
    for (int nodeRank = 0; nodeRank < nodeCount; nodeRank++) {
 
@@ -899,17 +895,13 @@ void received_token_message(s_N *node) {
 
       // { Receive the token from node Sj }
 
-      if (timerTelec) {
+      struct timer_node *auxTimerTelec = (struct timer_node*) timerTelec;
 
-         stop_timer(timerTelec);
+      stop_timer(auxTimerTelec);
 
-      }
+      struct timer_node *auxTimerTwait = (struct timer_node*) timerTwait;
 
-      if (timerTwait) {
-
-         stop_timer(timerTwait);
-
-      }
+      stop_timer(auxTimerTwait);
 
       if (node->xc->array != NULL) {
 
@@ -1430,7 +1422,9 @@ void received_present_message(s_N *node, int nodeSj) {
 
       if (node->myState == query) {
 
-         stop_timer(timerTelec);
+         struct timer_node *auxTimerTelec = (struct timer_node*) timerTelec;
+
+         stop_timer(auxTimerTelec);
 
          node->father = nodeSj;
 
@@ -1468,7 +1462,9 @@ void received_candidate_elected_message(s_N *node, int nodeSj) {
 
    if (node->failed == false) {
 
-      stop_timer(timerTelec);
+      struct timer_node *auxTimerTelec = (struct timer_node*) timerTelec;
+
+      stop_timer(auxTimerTelec);
 
       node->father = nodeSj;
 
