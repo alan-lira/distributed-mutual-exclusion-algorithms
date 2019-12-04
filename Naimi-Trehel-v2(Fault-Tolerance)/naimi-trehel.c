@@ -977,10 +977,18 @@ void jobMPIMessageProcessing(const void *parameters) {
 
 int main(int argc, char *argv[]) {
 
-   int nodeRank, nodeCount;
+   int nodeRank, nodeCount, providedThreadLevel;
 
-   // Inicializando o ambiente MPI.
-   MPI_Init(&argc, &argv);
+   // Inicializando o ambiente MPI Thread Multiple.
+   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &providedThreadLevel);
+
+   if (providedThreadLevel < MPI_THREAD_MULTIPLE) {
+
+      printf("The threading support level is lesser than that demanded.\n");
+
+      MPI_Abort(MPI_COMM_WORLD, 911);
+
+   }
 
    // Atribuindo à variável 'nodeRank' o id deste processo MPI.
    MPI_Comm_rank(MPI_COMM_WORLD, &nodeRank);
