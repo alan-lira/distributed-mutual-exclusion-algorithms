@@ -552,6 +552,8 @@ void received_timeout_signal(size_t timerId, void *userData) {
 
          case candidate:
 
+            node->tokenPresent = true;
+
             MPI_Send(&node->self, 1, MPI_INT, node->self, TAG_TOKEN, MPI_COMM_WORLD); // Necessário auto-envio de mensagem do TOKEN para dar unlock no tokenSemaphore.
 
             node->father = NIL;
