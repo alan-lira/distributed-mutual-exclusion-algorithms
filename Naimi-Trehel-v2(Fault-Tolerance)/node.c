@@ -1276,7 +1276,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
+               sprintf(node->logBuffer, "(Node %d): O node %d se candidatou para regenerar o TOKEN. Iniciei o meu timer 'Telec'. [node->myState = %s]\n", node->self, nodeSj, state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -1286,7 +1286,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
             if (node->printingEvents == true) {
 
-               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Reiniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
+               printf("(Node %d): O node %d se candidatou para regenerar o TOKEN. Iniciei o meu timer 'Telec'.\n\n", node->self, nodeSj);
 
             }
 
