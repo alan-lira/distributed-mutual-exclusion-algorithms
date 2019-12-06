@@ -382,15 +382,7 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
       }
 
-      if (node->myState == candidate) {
-
-         timerTelec = start_timer(timerTelec, 5 * TELEC, received_timeout_signal, singleShot, node);
-
-      } else {
-
-         timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
-
-      }
+      timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
 
    }
 
@@ -1245,7 +1237,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TOBS, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1276,7 +1268,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TOBS, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1307,7 +1299,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TOBS, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1338,7 +1330,7 @@ void received_election_message(s_N *node, int nodeSj) {
             node->xc->array = NULL;
             node->xc->arrayLength = 0;
 
-            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TOBS, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
@@ -1368,7 +1360,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
                node->myState = observer;
 
-               timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
+               timerTelec = start_timer(timerTelec, TOBS, received_timeout_signal, singleShot, node);
 
                if (node->loggingEvents == true) {
 
@@ -1396,7 +1388,7 @@ void received_election_message(s_N *node, int nodeSj) {
 
          case observer:
 
-            timerTelec = start_timer(timerTelec, TELEC, received_timeout_signal, singleShot, node);
+            timerTelec = start_timer(timerTelec, TOBS, received_timeout_signal, singleShot, node);
 
             if (node->loggingEvents == true) {
 
