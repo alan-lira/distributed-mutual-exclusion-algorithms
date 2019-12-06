@@ -490,7 +490,7 @@ void received_timeout_signal(size_t timerId, void *userData) {
 
                char *state = stateToString(node);
 
-               sprintf(node->logBuffer, "(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'PRESENT'! o TOKEN foi perdido! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
+               sprintf(node->logBuffer, "(Node %d): Meu timer 'Telec' expirou e não recebi a mensagem 'CANDIDATE ELECTED'! a eleição falhou! Enviando a mensagem %s em broadcast. [node->token = %s | node->myState = %s]\n", node->self, tag, node->tokenPresent ? "true" : "false", state);
 
                write_mpi_log_event(node->logFile, node->logBuffer);
 
@@ -504,7 +504,7 @@ void received_timeout_signal(size_t timerId, void *userData) {
 
                char *tag = tagToString(TAG_ELECTION);
 
-               printf("(Node %d): Meu timer 'Telec' expirou e não recebi a resposta da mensagem 'PRESENT'! o TOKEN foi perdido! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
+               printf("(Node %d): Meu timer 'Telec' expirou e não recebi a mensagem 'CANDIDATE ELECTED'! a eleição falhou! Enviando a mensagem %s em broadcast.\n\n", node->self, tag);
 
                free(tag);
 
