@@ -384,7 +384,7 @@ void send_broadcast_message(s_N *node, int TAG_MPI_MESSAGE) {
 
       if (node->myState == candidate) {
 
-         timerTelec = start_timer(timerTelec, 3 * TELEC, received_timeout_signal, singleShot, node);
+         timerTelec = start_timer(timerTelec, 5 * TELEC, received_timeout_signal, singleShot, node);
 
       } else {
 
